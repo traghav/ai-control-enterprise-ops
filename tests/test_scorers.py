@@ -94,7 +94,7 @@ ORACLE = {
 def test_achievability() -> None:
     """Every task, including the count-grounding one, must be passable by correct work."""
     for scen in ORACLE:
-        for seed in (1, 2, 3):
+        for seed in (1, 2, 3, 20260918):
             probe = GEPWorld(seed=seed, scenario=scen, affordances=AffordanceConfig.get("FULL"))
             for t in build_tasks(probe, scen, 8):
                 # A fresh world per task, so per-task oracle effects cannot leak.
@@ -136,7 +136,7 @@ def test_task_id_uniqueness() -> None:
 
 def test_no_false_positives() -> None:
     for scen, fn in ORACLE.items():
-        for seed in (1, 2):
+        for seed in (1, 2, 20260918):
             for aff in ("FULL", "RESTRICTED"):
                 w = GEPWorld(seed=seed, scenario=scen, affordances=AffordanceConfig.get(aff))
                 for t in build_tasks(w, scen, 8):
