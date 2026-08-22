@@ -20,14 +20,21 @@ serve_and_wait() {  # serve_and_wait <port>
   step "serving :$PORT"
   bash "$TM" start "$PORT"
   if ! bash "$TM" wait "$PORT" 900; then
-    step "FATAL: :$PORT failed to become healthy; aborting pipeline"
-    exit 1
+    # One retry: the common transient cause is the previous server's memory not yet
+    # fully released when this one profiles the GPU.
+    step ":$PORT not healthy; retrying once after 20s"
+    bash "$TM" stop "$PORT"; sleep 20
+    bash "$TM" start "$PORT"
+    if ! bash "$TM" wait "$PORT" 900; then
+      step "FATAL: :$PORT failed to become healthy after retry; aborting pipeline"
+      exit 1
+    fi
   fi
 }
 
 stop_server() {  # stop_server <port>
   bash "$TM" stop "$1"
-  sleep 8   # let the GPU actually free before the next model loads
+  sleep 15   # let the GPU actually free before the next model loads
 }
 
 run_driver() {  # run_driver <label> <args...>
