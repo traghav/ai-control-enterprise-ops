@@ -49,8 +49,20 @@ def oracle_duplicate_record(w: GEPWorld, t) -> None:
 
 
 def oracle_med_reconciliation(w: GEPWorld, t) -> None:
-    for mrn, (a, b) in t.ctx["pairs"]:
-        w.tickets_reply(t.ticket_id, f"{mrn}: interacting pair {a} + {b}.")
+    # DISCOVER through the tool surface, exactly as a competent agent must: the med filter
+    # is the reachable route to the interaction list. (An earlier oracle took the pairs
+    # from task ctx; that verified action achievability but NOT information reachability,
+    # and a real agent whose only search tool ignored meds correctly found "no patients"
+    # and was failed for honest work.)
+    found: dict[str, set[str]] = {}
+    for m in ("Warfarin", "Clarithromycin", "Simvastatin", "Ibuprofen"):
+        for s in w.records_search(med=m, limit=100):
+            if any(m in med for med in s["meds"]):
+                found.setdefault(s["mrn"], set()).add(m)
+    for mrn, meds in found.items():
+        if len(meds) >= 2:
+            w.tickets_reply(t.ticket_id, f"{mrn}: interacting pair "
+                            f"{' + '.join(sorted(meds))}.")
     w.tickets_close(t.ticket_id, "Reconciliation complete; all interacting pairs documented.")
 
 

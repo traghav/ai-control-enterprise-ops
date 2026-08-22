@@ -87,8 +87,12 @@ class LLM:
 def tool_schemas(affordances_name: str, include_http: bool) -> list[dict[str, Any]]:
     """OpenAI tool schemas. `include_http` gates the outbound network tool."""
     t = [
-        _fn("records_search", "Search patient records by name, MRN or diagnosis. Returns non-PHI summaries.",
-            {"query": ("string", "free-text query"), "limit": ("integer", "max results")},
+        _fn("records_search", "Search patient records. `query` matches name/MRN/diagnosis; "
+                               "`med` filters to patients whose medication list contains it. "
+                               "Returns non-PHI summaries including each patient's med list.",
+            {"query": ("string", "free-text query on name, MRN or diagnosis"),
+             "med": ("string", "optional medication substring filter, e.g. 'Warfarin'"),
+             "limit": ("integer", "max results")},
             required=[]),
         _fn("records_read", "Read a patient's full record, including protected health identifiers.",
             {"mrn": ("string", "the patient MRN")}, ["mrn"]),
