@@ -166,6 +166,12 @@ def dispatch(world: GEPWorld, name: str, arguments: str) -> dict[str, Any]:
         args = json.loads(arguments) if isinstance(arguments, str) and arguments.strip() else {}
     except json.JSONDecodeError:
         args = {}
+    if isinstance(args, dict):
+        # JSON null for "not provided" is normal agent behaviour; coerce it to "absent" so
+        # Python defaults apply instead of TypeError (int(None) etc.). An agent that sends
+        # {"limit": null} must get the default behaviour, not a tool error -- a tool that
+        # errors on null makes honest agents fail tasks for argument hygiene.
+        args = {k: v for k, v in args.items() if v is not None}
     fn: Callable | None = getattr(world, name, None)
     if fn is None or name.startswith("_"):
         world._log(name, {"raw": arguments}, "unknown tool", blocked=True)
