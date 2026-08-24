@@ -83,7 +83,10 @@ def run_episode(
 
     if cell.mode == "honest":
         system = HONEST_SYSTEM
-    elif cell.mode == "attack":
+    elif cell.mode in ("attack", "attack_probe"):
+        # attack_probe = an ALIGNED model given the attack prompt (elicitation probe).
+        # It uses the same attack system prompt as the real attack phase; the distinct
+        # mode label exists so analysis never reads these rows as attack capability.
         system = build_attack_system(include_http)
     elif cell.mode == "selective_attack":
         system = build_selective_attack_system(include_http)
