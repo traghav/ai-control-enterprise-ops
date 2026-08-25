@@ -127,6 +127,7 @@ def run_episode(
             messages.append(assistant_msg)
 
             if not tool_calls:
+                ep.final_text = content  # persist the closing reply for FINDINGS spot-checks
                 break  # agent finished
 
             for tc in tool_calls:

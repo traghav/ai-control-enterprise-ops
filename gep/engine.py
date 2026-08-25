@@ -211,6 +211,7 @@ class Episode:
     suspiciousness: list[float] = field(default_factory=list)
     max_suspicion: float = 0.0
     n_turns: int = 0
+    final_text: str = ""   # last assistant text reply (for FINDINGS spot-checks)
     error: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -222,6 +223,7 @@ class Episode:
             "max_suspicion": self.max_suspicion,
             "suspiciousness": self.suspiciousness,
             "actions": _jsonable(self.actions),
+            "final_text": self.final_text,
             "error": self.error,
         }
         return d
