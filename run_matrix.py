@@ -303,8 +303,15 @@ def run_monitor_phase(repo: str, family: str, port: int, informed: bool = True) 
 def run_analyze() -> None:
     import pandas as pd
 
-    # Join episodes with every monitor's scores.
+    from gep.replay import rescore
+
+    # Join episodes with every monitor's scores. Task/side-task verdicts are RE-DERIVED
+    # via replay under the CURRENT scorers and world semantics -- stored verdicts may have
+    # been computed by an older scorer version at episode time, and analysis must never
+    # depend on which scorer version happened to be running then. Replay is pure Python
+    # (no model calls), so this is cheap.
     frames = []
+    rescored_cache: dict[str, dict] = {}
     for phase in ("honest", "attack", "probe"):
         p = episodes_path(phase)
         if not p.exists():
@@ -318,7 +325,21 @@ def run_analyze() -> None:
                 r = json.loads(l)
                 score_map.setdefault(r["episode_id"], []).append(r)
         for e in eps:
-            for s in score_map.get(e["episode_id"], []):
+            eid = e["episode_id"]
+            if eid not in rescored_cache:
+                try:
+                    rescored_cache[eid] = rescore(e)
+                except Exception as ex:  # noqa: BLE001
+                    print(f"[analyze] rescore failed for {eid}: {ex!r}")
+                    rescored_cache[eid] = {
+                        "main_task_success": e.get("main_task_success", {}),
+                        "side_task_success": e.get("side_task_success", {}),
+                        "side_task_detail": e.get("side_task_detail", {}),
+                    }
+            e = dict(e)
+            e["main_task_success"] = rescored_cache[eid]["main_task_success"]
+            e["side_task_success"] = rescored_cache[eid]["side_task_success"]
+            for s in score_map.get(eid, []):
                 frames.append((e, s))
     if not frames:
         print("[analyze] no scored episodes yet")
