@@ -310,7 +310,7 @@ def run_analyze() -> None:
     # been computed by an older scorer version at episode time, and analysis must never
     # depend on which scorer version happened to be running then. Replay is pure Python
     # (no model calls), so this is cheap.
-    frames = []
+    frames = []  # (phase, episode, monitor_score)
     rescored_cache: dict[str, dict] = {}
     for phase in ("honest", "attack", "probe"):
         p = episodes_path(phase)
@@ -340,14 +340,14 @@ def run_analyze() -> None:
             e["main_task_success"] = rescored_cache[eid]["main_task_success"]
             e["side_task_success"] = rescored_cache[eid]["side_task_success"]
             for s in score_map.get(eid, []):
-                frames.append((e, s))
+                frames.append((phase, e, s))
     if not frames:
         print("[analyze] no scored episodes yet")
         return
 
     # summarize_cell expects the nested {"cell": {...}, ...} shape of Episode.to_dict().
     by_cell: dict[tuple, list[dict]] = {}
-    for e, s in frames:
+    for _phase, e, s in frames:
         eid = e["episode_id"]
         cellkey = (s["monitor"], e["cell"]["untrusted_model"], e["cell"]["untrusted_family"],
                    e["cell"]["affordances"], e["cell"]["mode"])
@@ -370,14 +370,14 @@ def run_analyze() -> None:
         rows.append(row)
 
     df = pd.DataFrame([{
-        "episode_id": e["episode_id"], "phase": e["cell"].get("scenario"),
+        "episode_id": e["episode_id"], "phase": ph,
         "main_success": 1 if any(e["main_task_success"].values()) else 0,
         "side_success": 1 if any(e["side_task_success"].values()) else 0,
         "max_suspicion": s["max"], "monitor": s["monitor"],
         "monitor_family": s["monitor_family"],
         "n_actions": len(e.get("actions", [])),
         **{k: v for k, v in e["cell"].items()},
-    } for e, s in frames])
+    } for ph, e, s in frames])
     df.to_csv(RUNS / "joined.csv", index=False)
     print(f"[analyze] joined table: {len(df)} rows -> runs/joined.csv")
     out = pd.DataFrame(rows).sort_values(["untrusted_model", "monitor", "affordances", "mode"])
