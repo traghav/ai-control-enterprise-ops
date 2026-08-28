@@ -56,17 +56,16 @@ POLICY_HONEST = [
     ("stelterlab/phi-4-AWQ", "phi", 8022, 0.65),
 ]
 POLICY_ATTACK = [
-    # attack-elicited checkpoints. The abliterated Qwen2.5-32B is the same base checkpoint
-    # as the honest Qwen2.5-32B, so the honest/attack pair differs by behavioural
-    # modification only, not by lineage or scale (see DECISIONS D6). phi-4 appears in BOTH
-    # rosters: an aligned model given attack prompts measures elicitation, not attack
-    # success, so its attack-mode rows are reported as the probe.
+    # Attack phase runs ONLY on behaviourally-ablated checkpoints (DECISIONS D6): aligned
+    # models given attack prompts are the PROBE phase (elicitation/refusal), never attack
+    # capability. Two lineages => the monitor transfer matrix is genuinely cross-lineage.
     ("ibrahimkettaneh/Qwen2.5-32B-Instruct-abliterated-pass2-AWQ", "qwen", 8023, 0.85),
-    ("stelterlab/phi-4-AWQ", "phi", 8022, 0.65),
+    ("mlabonne/Meta-Llama-3.1-8B-Instruct-abliterated", "llama", 8024, 0.70),
 ]
-POLICY_ALIGNED_ATTACK_PROBE = [
-    # aligned model given attack prompts: measures elicitation/refusal, not attack success
+POLICY_PROBE = [
+    # aligned models given attack prompts: measures elicitation/refusal, not attack success
     ("Qwen/Qwen2.5-32B-Instruct-AWQ", "qwen", 8020, 0.85),
+    ("stelterlab/phi-4-AWQ", "phi", 8022, 0.65),
 ]
 MONITORS = [
     # (repo_id, family, port, gpu_util, informed)
@@ -417,8 +416,7 @@ def main() -> None:
         return
 
     phase = "honest" if args.phase == "honest" else ("attack" if args.phase == "attack" else "probe")
-    roster = {"honest": POLICY_HONEST, "attack": POLICY_ATTACK,
-              "probe": POLICY_ALIGNED_ATTACK_PROBE}[phase]
+    roster = {"honest": POLICY_HONEST, "attack": POLICY_ATTACK, "probe": POLICY_PROBE}[phase]
     if args.model:
         roster = [r for r in roster if args.model in r[0]]
         if not roster:
