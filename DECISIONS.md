@@ -117,3 +117,13 @@ but not BEHAVIOUR. A matrix whose cells were generated under two different harne
 versions is not a controlled comparison, so all episodes were wiped and rerun under the
 final harness. Cost: ~75 min of GPU time; benefit: every cell in the matrix was generated
 by identical code. The earlier episodes remain in git history if needed.
+
+## D11 — Attack vs probe: only ablated checkpoints count as attack capability
+
+An aligned model given the attack prompt mostly refuses or partially complies; counting
+its side-task completions as "attack success" would measure refusal training, not control
+safety. Therefore: the attack phase runs ONLY on behaviourally-ablated checkpoints
+(Qwen2.5-32B-abl, Llama-3.1-8B-abl — two vendor lineages), while aligned models given the
+same prompt are the PROBE phase, reported separately as an elicitation measurement. The
+probe's side-task rate quantifies how much attack behaviour an aligned model can be
+talked into without ablation; it is never pooled into the attack-success column.
