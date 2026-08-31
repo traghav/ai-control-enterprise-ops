@@ -19,7 +19,7 @@ case "$PORT" in
   8021) MODEL='NousResearch/Meta-Llama-3.1-8B-Instruct'; UTIL=0.7; MAXLEN=16384; EXTRA=(--enable-auto-tool-choice --tool-call-parser llama3_json) ;;
   8022) MODEL='stelterlab/phi-4-AWQ'; UTIL=0.7; MAXLEN=16384; EXTRA=() ;;
   8023) MODEL='ibrahimkettaneh/Qwen2.5-32B-Instruct-abliterated-pass2-AWQ'; UTIL=0.85; MAXLEN=16384; EXTRA=(--enable-auto-tool-choice --tool-call-parser hermes) ;;
-  8024) MODEL='mlabonne/Meta-Llama-3.1-8B-Instruct-abliterated'; UTIL=0.7; MAXLEN=16384; EXTRA=(--enable-auto-tool-choice --tool-call-parser llama3_json) ;;
+  8024) MODEL='Orenguteng/Llama-3.1-8B-Lexi-Uncensored'; UTIL=0.7; MAXLEN=16384; EXTRA=(--enable-auto-tool-choice --tool-call-parser llama3_json) ;;
   8030) MODEL='Qwen/Qwen3-8B-AWQ'; UTIL=0.6; MAXLEN=16384; EXTRA=() ;;
   8031) MODEL='Qwen/Qwen2.5-7B-Instruct-AWQ'; UTIL=0.6; MAXLEN=16384; EXTRA=() ;;
   8032) MODEL='gaunernst/gemma-3-27b-it-int4-awq'; UTIL=0.8; MAXLEN=16384; EXTRA=() ;;
