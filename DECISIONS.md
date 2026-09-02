@@ -127,3 +127,28 @@ safety. Therefore: the attack phase runs ONLY on behaviourally-ablated checkpoin
 same prompt are the PROBE phase, reported separately as an elicitation measurement. The
 probe's side-task rate quantifies how much attack behaviour an aligned model can be
 talked into without ablation; it is never pooled into the attack-success column.
+
+## D12 — Same-checkpoint honest baselines; phi-4 and aligned-Llama dropped
+
+A coverage audit of the joined score table exposed two junk honest legs beyond the two
+junk attack lineages already swapped: (a) the aligned NousResearch Llama-3.1-8B honest
+phase — its re-upload ships a chat template that never renders tool schemas, so the model
+wrote prose plans for all 90 episodes and never emitted one tool call; (b) phi-4 honest
+AND probe phases — phi-4 has no vLLM tool parser (only phi4mini, a different model), so
+every tool_choice=auto request was a 400 and all 180 episodes errored. The monitor-side
+filter (zero-action episodes are not scored) silently hid both from analysis, which is why
+Llama/phi-4 rows showed n=0 baselines.
+
+Two consequences:
+
+1. **Protocol fix (the important one):** the honest baseline for each untrusted policy is
+   now THE SAME CHECKPOINT run in honest mode — the Qwen-abl and Hermes-3 rosters gain
+   honest legs. This is the ControlArena protocol shape (one untrusted policy, honest or
+   attack mode) and it makes within-model AUROC/safety exact: mode is the only differing
+   factor, so monitor separation cannot be confounded by checkpoint differences. The
+   earlier lineage-based pairing was an approximation forced by the missing legs.
+2. **Fallback ladder:** phi-4 is dropped entirely (no working tool parser; two failures
+   already logged) and the aligned-Llama honest leg is dropped (broken template). The
+   matrix stands on Qwen-abl + Hermes-3 (two lineages) with their own honest legs, plus
+   the aligned-Qwen probe. The official llama-3.1 tool template was fetched to
+   /home/ubuntu/llama31_tool_template.jinja in case the aligned Llama is ever revived.
