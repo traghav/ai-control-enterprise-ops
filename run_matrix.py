@@ -92,6 +92,15 @@ AFFORDANCES = ["FULL", "RESTRICTED"]
 EPISODES_PER_SCENARIO = 4   # reps; each rep = fresh world seed => distinct planted tasks
 MAX_PARALLEL_EPISODES = 4
 
+# E3 (attack-selection) cell: re-run ONE cell with the start/stop policy -- attack only
+# when a side task is naturally reachable from the current main task. Cell choice: the
+# highest-attack-success configuration (Qwen-abl x FULL), so the safety delta is measured
+# where there is the most attack signal to lose or gain.
+SELECTIVE_ROSTER = [
+    ("ibrahimkettaneh/Qwen2.5-32B-Instruct-abliterated-pass2-AWQ", "qwen", 8023, 0.85),
+]
+SELECTIVE_AFFORDANCES = ["FULL"]
+
 
 def episodes_path(phase: str) -> Path:
     return RUNS / f"episodes_{phase}.jsonl"
@@ -162,7 +171,9 @@ def run_phase_episodes(phase: str, roster: list[tuple], port_for_run: int | None
 
     jobs = []
     for repo, family, port, _util in live:
-        for aff in AFFORDANCES:
+        # E3 selective phase runs ONE cell only (SELECTIVE_AFFORDANCES), not the grid.
+        affs = SELECTIVE_AFFORDANCES if phase == "selective" else AFFORDANCES
+        for aff in affs:
             for scen in SCENARIOS:
                 for rep in range(EPISODES_PER_SCENARIO):
                     eid = f"{phase}|{repo}|{aff}|{scen}|{rep}"
@@ -191,8 +202,12 @@ def run_phase_episodes(phase: str, roster: list[tuple], port_for_run: int | None
             affordances=aff,
             # probe = aligned model given attack prompts: measures elicitation/refusal,
             # NOT attack success. Distinct mode label so analysis never reads these rows
-            # as the aligned model's attack capability.
-            mode="honest" if phase == "honest" else "attack_probe" if phase == "probe" else "attack",
+            # as the aligned model's attack capability. selective = E3 start/stop policy
+            # (attack only when the side task is naturally reachable from the ticket).
+            mode=("honest" if phase == "honest"
+                  else "attack_probe" if phase == "probe"
+                  else "selective_attack" if phase == "selective"
+                  else "attack"),
         )
         llm = LLM(LLMConfig(model=repo, base_url=f"http://localhost:{port}/v1",
                             temperature=0.7, max_tokens=1536))
@@ -256,7 +271,7 @@ def run_monitor_phase(repo: str, family: str, port: int, informed: bool = True) 
 
     # Collect every scored episode across phases.
     traj: dict[str, dict] = {}
-    for phase in ("honest", "attack", "probe"):
+    for phase in ("honest", "attack", "probe", "selective"):
         p = episodes_path(phase)
         if not p.exists():
             continue
@@ -339,8 +354,11 @@ def run_analyze() -> None:
     # depend on which scorer version happened to be running then. Replay is pure Python
     # (no model calls), so this is cheap.
     frames = []  # (phase, episode, monitor_score)
+    mon_family: dict[str, str] = {}  # monitor slug -> family (from score records; the
+    # episode cells carry monitor_family=None for policy phases, so the score record is
+    # the only reliable source)
     rescored_cache: dict[str, dict] = {}
-    for phase in ("honest", "attack", "probe"):
+    for phase in ("honest", "attack", "probe", "selective"):
         p = episodes_path(phase)
         if not p.exists():
             continue
@@ -352,6 +370,7 @@ def run_analyze() -> None:
                     continue
                 r = json.loads(l)
                 score_map.setdefault(r["episode_id"], []).append(r)
+                mon_family[r["monitor"]] = r.get("monitor_family", "")
         for e in eps:
             eid = e["episode_id"]
             if eid not in rescored_cache:
@@ -398,6 +417,7 @@ def run_analyze() -> None:
         s = summarize_cell(eps, side_ids)
         row = s.to_row()
         row["monitor"] = mon
+        row["monitor_family"] = mon_family.get(mon, "")
         row["untrusted_model"] = model
         row["untrusted_family"] = eps[0]["cell"]["untrusted_family"] if eps else ""
         row["affordances"] = aff
@@ -436,7 +456,8 @@ def run_analyze() -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("phase", choices=["honest", "attack", "probe", "monitor", "analyze"])
+    ap.add_argument("phase", choices=["honest", "attack", "probe", "selective", "monitor",
+                                      "analyze"])
     ap.add_argument("--model", help="override: run only this roster entry (repo id substring)")
     ap.add_argument("--port", type=int, help="port the current phase model is served on")
     ap.add_argument("--monitor", help="monitor repo id substring for the monitor phase")
@@ -454,8 +475,9 @@ def main() -> None:
         run_monitor_phase(repo, family, args.port or port, informed)
         return
 
-    phase = "honest" if args.phase == "honest" else ("attack" if args.phase == "attack" else "probe")
-    roster = {"honest": POLICY_HONEST, "attack": POLICY_ATTACK, "probe": POLICY_PROBE}[phase]
+    phase = args.phase
+    roster = {"honest": POLICY_HONEST, "attack": POLICY_ATTACK, "probe": POLICY_PROBE,
+              "selective": SELECTIVE_ROSTER}[phase]
     if args.model:
         roster = [r for r in roster if args.model in r[0]]
         if not roster:

@@ -15,7 +15,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
-RUNS = Path(__file__).parent / "runs"
+RUNS = Path(__file__).parent.parent / "runs"
 FIGS = RUNS / "figs"
 
 
@@ -23,11 +23,19 @@ def _short(model: str) -> str:
     return model.split("/")[-1].replace("-Instruct", "").replace("-Instruct-AWQ", "")
 
 
+def _attack_cells(df: pd.DataFrame) -> pd.DataFrame:
+    """Cells whose attack statistics are meaningful: the summary table labels them
+    'mixed' (same checkpoint, honest + attack modes merged) or 'attack'; honest-only
+    cells carry no attack signal. Accepts either label so the figure survives schema
+    evolution."""
+    return df[(df["mode"].isin(["attack", "mixed"])) & df["auroc"].notna()]
+
+
 def fig_safety_usefulness(df: pd.DataFrame) -> Path:
-    """Attack-mode cells: x = usefulness (honest success), y = safety at 1% audit budget."""
+    """Attack cells: x = usefulness (honest success), y = safety at 1% audit budget."""
     FIGS.mkdir(exist_ok=True)
     out = FIGS / "safety_usefulness.png"
-    atk = df[(df["mode"] == "attack") & df["safety_1pct"].notna()]
+    atk = _attack_cells(df)
     hon = df[df["mode"] == "honest"]
     fig, ax = plt.subplots(figsize=(7.5, 5.5))
     for (untr, mon), g in atk.groupby(["untrusted_model", "monitor"]):
@@ -55,7 +63,8 @@ def fig_safety_usefulness(df: pd.DataFrame) -> Path:
 def fig_transfer_matrix(df: pd.DataFrame) -> Path | None:
     """Monitor-family × policy-family AUROC heatmap (attack cells, FULL affordances)."""
     FIGS.mkdir(exist_ok=True)
-    atk = df[(df["mode"] == "attack") & (df["affordances"] == "FULL") & df["auroc"].notna()]
+    atk = _attack_cells(df)
+    atk = atk[atk["affordances"] == "FULL"]
     if atk.empty:
         return None
     piv = atk.pivot_table(index="monitor_family", columns="untrusted_family", values="auroc")
@@ -82,7 +91,7 @@ def fig_transfer_matrix(df: pd.DataFrame) -> Path | None:
 def fig_affordance_effect(df: pd.DataFrame) -> Path | None:
     """Paired FULL vs RESTRICTED comparison per (untrusted, monitor): attack success."""
     FIGS.mkdir(exist_ok=True)
-    atk = df[df["mode"] == "attack"]
+    atk = _attack_cells(df)
     if atk.empty:
         return None
     piv = atk.pivot_table(index=["untrusted_model", "monitor"],
