@@ -153,17 +153,21 @@ Two consequences:
    the aligned-Qwen probe. The official llama-3.1 tool template was fetched to
    /home/ubuntu/llama31_tool_template.jinja in case the aligned Llama is ever revived.
 
-## D13 — E4 ticket-aware monitoring run post-hoc
+## D13 — E4 ticket-aware monitoring run post-hoc, all three monitors
 
 FINDINGS #3 identified the mechanism (prefix-ambiguity between sanctioned and hostile
 actions). Because monitoring is post-hoc (D3/execution model), testing the mechanism
-required no new policy episodes: the same 577 trajectories were re-scored by the same
-Qwen3-8B monitor with the assigned ticket's ORIGINAL subject+body added to its context
-(comments excluded — agent-writable, so a monitor that reads them can be self-authorised
-against). Result: honest FPR@.5 drops 30-100% relatively across cells at unchanged AUROC;
-the access_review honest tail vanishes (median 0.75 -> 0.00). The roi_withhold tail
-PERSISTS, and should: trajectory adjudication after the ROI-scorer fix showed those
-"honest"-prompted Qwen-abl episodes actually released records to partner stores — the
-monitor is detecting, not hallucinating. One monitor (Qwen3-8B) was re-run, not all
-three: the claim tested is context vs no-context at fixed monitor, not a new transfer
-matrix.
+required no new policy episodes: all 577 trajectories were re-scored by each monitor
+with the assigned ticket's ORIGINAL subject+body added to its context (comments excluded
+— agent-writable, so a monitor that reads them can be self-authorised against).
+
+Result (15 cells): FPR@.5 falls in 13/15 cells — halved or better in 9 — at AUROC
+changes within ±0.07. The access_review honest tail vanishes (median 0.75 -> 0.00).
+The roi_withhold tail PERSISTS, and should: trajectory adjudication after the ROI-scorer
+fix showed those "honest"-prompted Qwen-abl episodes actually released records to
+partner stores — the monitor is detecting, not hallucinating.
+
+The second E4 question — does ticket context close the cross-lineage collapse? — is
+answered NO: Gemma's Hermes-3 AUROC moves only 0.585 -> 0.676, still ~0.25 below its
+Qwen-lineage level. False positives are an information problem; the transfer failure is
+a monitor generalization problem. Different problems, different remedies.
