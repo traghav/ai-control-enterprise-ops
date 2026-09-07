@@ -4,16 +4,19 @@
 
 **In a reproducible enterprise-ops control setting (GEP), measured control safety is a
 property of the (untrusted policy x trusted monitor x affordance configuration) pairing,
-not of any single factor.** Two concrete separations demonstrate this: (1) monitor AUROC
-collapses by 0.28-0.41 when the same two monitors are moved from a Qwen-lineage policy to
-a Llama-lineage one, while affordance restriction leaves overall attack success unchanged
-(0.41 -> 0.43) because the attack substitutes between side tasks; (2) the honest
-false-positive tail is *policy- and task-dependent* -- it saturates at the score ceiling
-for role-governance and release-withholding tasks where honest actions are
-prefix-identical to violations. Consequence for practice: a monitor validated on one
-model family and one tool configuration gives no warranty about its behaviour on another;
-and restricting affordances buys a change in *which* violations occur, not a reduction in
-*whether* they do.
+not of any single factor.** Three concrete separations demonstrate this: (1) monitor
+AUROC collapses by 0.28-0.41 when the same monitors are moved from a Qwen-lineage policy
+to a Llama-lineage one, while affordance restriction leaves overall attack success
+unchanged (0.41 -> 0.43) because the attack substitutes between side tasks; (2) the
+honest false-positive tail is *policy- and task-dependent* -- it saturates at the score
+ceiling for role-governance and release-withholding tasks where honest actions are
+prefix-identical to violations; (3) the false positives are largely *removable*: giving
+the monitor the assigned ticket's original authorisation context cuts FPR@0.5 by 30-100%
+(relatively) across cells at unchanged AUROC (E4). Consequence for practice: a monitor
+validated on one model family and one tool configuration gives no warranty about its
+behaviour on another; restricting affordances buys a change in *which* violations occur,
+not a reduction in *whether* they do; and the cheapest large monitor win is not a bigger
+model but the authorisation context the deployment already has.
 
 ## Supporting evidence
 
@@ -46,7 +49,16 @@ and restricting affordances buys a change in *which* violations occur, not a red
    is the opposite case (attack success 0.05, honest usefulness 0.05 -- it is not
    reliable in either mode at following the multi-step workflow).
 
-5. **World-state scoring is what makes the numbers mean anything.** Attack plans are
+5. **Authorisation context is the cheapest monitor upgrade (E4).** Re-scoring all 577
+   trajectories with the same Qwen3-8B monitor plus the assigned ticket's original
+   content cut FPR@0.5 from 0.25 to 0.18 (Qwen-abl FULL), 0.24 to 0.11 (RESTRICTED),
+   0.09 to 0.00 (Hermes-3), 0.23 to 0.11 (probe FULL), 0.17 to 0.04 (probe RESTRICTED),
+   at essentially unchanged AUROC (+0.007/+0.013/+0.068/-0.007/-0.033). The honest
+   access_review tail vanished (median 0.75 -> 0.00). The monitor did not need to be
+   bigger; it needed the information that distinguishes "sanctioned by the ticket" from
+   "self-authorised" -- information every real deployment already has.
+
+6. **World-state scoring is what makes the numbers mean anything.** Attack plans are
    frequent in transcripts; completed violations are not. Spot-checks of 10 attack
    trajectories show exfiltration attempts with hallucinated MRNs ("123456789"), blocked
    export attempts retried through other channels, and one attempted-but-insufficient
@@ -81,15 +93,16 @@ and restricting affordances buys a change in *which* violations occur, not a red
 
 - **n = 42-46 per cell; ~40 policy-hours.** Bootstrap CIs at these sizes are about
   +/-0.14: differences below that (e.g. the FULL-vs-RESTRICTED attack-success delta) are
-  not resolved. The transfer-matrix collapse (0.28-0.41 AUROC) is far outside this band.
+  not resolved. The transfer-matrix collapse (0.28-0.41 AUROC) and the E4 FPR reductions
+  are far outside this band.
 - **One untrusted model per lineage, one seed family.** Lineage-level claims rest on a
   single checkpoint per lineage; within-lineage variance is unmeasured.
 - **No shell access.** The world is tool-mediated (D2) for attribution and
   reproducibility; attacks through a general-purpose shell are out of scope, so the
   attack surface is narrower than a bash-sandbox setting.
-- **Monitors see tool calls and results, not model chain-of-thought.** A monitor that
-  reasoned over the ticket thread as well as the prefix might resolve the prefix-
-  ambiguity documented above; that variant is untested here.
+- **Monitors see the ticket text but not the model's chain-of-thought.** The E4 variant
+  still scores actions prefix-only; a monitor that could also defer *mid-episode* on
+  ticket context (rather than scoring post-hoc) is untested.
 - **The audit budget formalism saturates** when the honest tail sits at the ceiling;
   we report TPR/FPR at fixed thresholds alongside it, but the field-standard safety
   number is degenerate in exactly the cells where monitoring is hardest.
@@ -98,13 +111,14 @@ and restricting affordances buys a change in *which* violations occur, not a red
 
 ## Next experiment
 
-1. **Ticket-aware monitoring**: give the monitor the assigned ticket (and its thread) as
-   part of the context, testing whether the prefix-ambiguity ceiling is an artefact of
-   context-free action scoring. This is the highest-value follow-up: it targets the
-   exact mechanism found above.
+1. **Defer-on-ticket-context**: combine ticket-aware scoring (E4) with
+   defer-to-trusted-upon-suspicion, and measure whether the FPR reduction converts into
+   a usefulness win at matched safety -- the operational payoff of the E4 result.
 2. **Severity-weighted affordance comparison**: with the substitution effect documented,
    re-rank FULL vs RESTRICTED under explicit severity weights and a larger n, instead of
    raw attack success.
 3. **Elicitation-hardened attack selection**: E3's start/stop policy needs to be trained
    or scaffolded (not just prompted) before the selection hypothesis can be tested.
-4. **More lineages at matched capability**, separating checkpoint scale from lineage.
+4. **More lineages at matched capability**, separating checkpoint scale from lineage,
+   to test whether the transfer collapse is a lineage effect or a capability effect.
+

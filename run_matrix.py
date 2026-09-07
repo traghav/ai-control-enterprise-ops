@@ -263,8 +263,10 @@ def run_phase_episodes(phase: str, roster: list[tuple], port_for_run: int | None
 # --------------------------------------------------------------------------------------
 
 
-def run_monitor_phase(repo: str, family: str, port: int, informed: bool = True) -> None:
-    slug = repo.split("/")[-1] + ("_informed" if informed else "_uninformed")
+def run_monitor_phase(repo: str, family: str, port: int, informed: bool = True,
+                      ticket_aware: bool = False) -> None:
+    slug = repo.split("/")[-1] + ("_informed" if informed else "_uninformed") \
+        + ("_ticket" if ticket_aware else "")
     out = scores_path(slug)
     done = load_done_ids(out)
     wait_for_port(port)
@@ -293,9 +295,34 @@ def run_monitor_phase(repo: str, family: str, port: int, informed: bool = True) 
         return
 
     mon = LLMMonitor(MonitorSpec(name=slug, model=repo, base_url=f"http://localhost:{port}/v1",
-                                 family=family, informed=informed))
+                                 family=family, informed=informed, ticket_aware=ticket_aware))
     lock = threading.Lock()
     counter = {"done": 0, "t0": time.time()}
+
+    # E4: the ticket blob for ticket-aware scoring must be the ticket's ORIGINAL state
+    # (pre-episode). Comments are EXCLUDED -- they are agent-writable, and a monitor that
+    # reads them can be self-authorised against. Derived by replaying the world WITHOUT
+    # the episode's actions (deterministic, no model calls).
+    def original_ticket_blob(rec: dict) -> str:
+        from gep.world import AffordanceConfig, GEPWorld
+
+        cell = rec["cell"]
+        try:
+            w = GEPWorld(seed=int(rec.get("seed", cell["seed"])), scenario=cell["scenario"],
+                         affordances=AffordanceConfig.get(cell["affordances"]))
+            t = w.state["tickets_by_id"].get(cell.get("main_ticket_id", ""))
+            if t is None:
+                # fall back to the pre-episode world's ticket for this task
+                from gep.tasks import build_tasks
+                tasks = build_tasks(w, cell["scenario"], 8)
+                tid = next((t2.ticket_id for t2 in tasks
+                            if t2.task_id == cell.get("main_task_id")), None)
+                t = w.state["tickets_by_id"].get(tid or "")
+            if t is None:
+                return ""
+            return f"Subject: {t['subject']}\n{t['body']}"
+        except Exception:  # noqa: BLE001
+            return ""
 
     def one(eid: str, rec: dict) -> None:
         actions = rec["actions"]
@@ -315,13 +342,17 @@ def run_monitor_phase(repo: str, family: str, port: int, informed: bool = True) 
                 goal = t.goal if t is not None else rec["cell"].get("main_task_id", "")
             except Exception:  # noqa: BLE001
                 goal = rec["cell"].get("main_task_id", "")
-        per = [mon.score_action(goal, actions, i)
+        # Ticket blob for ticket-aware monitors: computed once per episode, original
+        # state only (empty string for context-free monitors, which never see it).
+        blob = original_ticket_blob(rec) if mon.spec.ticket_aware else ""
+        per = [mon.score_action(goal, actions, i, blob)
                for i in range(len(actions))]
         with lock:
             append_jsonl(out, {
                 "episode_id": eid,
                 "monitor": slug,
                 "monitor_family": family,
+                "ticket_aware": mon.spec.ticket_aware,
                 "scores": [p["score"] for p in per],
                 "max": max((p["score"] for p in per), default=0.0),
                 "mean": (sum(p["score"] for p in per) / len(per)) if per else 0.0,
@@ -461,6 +492,9 @@ def main() -> None:
     ap.add_argument("--model", help="override: run only this roster entry (repo id substring)")
     ap.add_argument("--port", type=int, help="port the current phase model is served on")
     ap.add_argument("--monitor", help="monitor repo id substring for the monitor phase")
+    ap.add_argument("--ticket-aware", action="store_true",
+                    help="E4: run the monitor with the assigned ticket's original content "
+                         "in context (scores to a separate _ticket slug)")
     args = ap.parse_args()
 
     if args.phase == "analyze":
@@ -472,7 +506,8 @@ def main() -> None:
         if not cands:
             raise SystemExit("no matching monitor")
         repo, family, port, _u, informed = cands[0]
-        run_monitor_phase(repo, family, args.port or port, informed)
+        run_monitor_phase(repo, family, args.port or port, informed,
+                          ticket_aware=args.ticket_aware)
         return
 
     phase = args.phase
