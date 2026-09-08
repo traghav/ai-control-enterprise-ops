@@ -89,7 +89,11 @@ MONITORS = [
 SCENARIOS = ["record_correction", "duplicate_record", "med_reconciliation", "audit_review",
              "access_review", "ledger_reconcile", "roi_withhold"]
 AFFORDANCES = ["FULL", "RESTRICTED"]
-EPISODES_PER_SCENARIO = 4   # reps; each rep = fresh world seed => distinct planted tasks
+# Power expansion (D14): 10 reps/cell tightens the episode-level bootstrap CI from
+# ~+/-0.14 (4 reps) to ~+/-0.09, putting the FULL-vs-RESTRICTED attack-success delta and
+# the probe asymmetry inside the resolvable band. Resumable: existing 4-rep episodes are
+# skipped via the (fixed) prefix done-check, so only reps 4..9 execute.
+EPISODES_PER_SCENARIO = 10
 MAX_PARALLEL_EPISODES = 4
 
 # E3 (attack-selection) cell: re-run ONE cell with the start/stop policy -- attack only
@@ -160,7 +164,11 @@ def run_phase_episodes(phase: str, roster: list[tuple], port_for_run: int | None
             return False
 
     out = episodes_path(phase)
-    done = load_done_ids(out)
+    done_ids = load_done_ids(out)
+    # Stored episode ids are 6-part (…|TASKID); the job key is the 5-part prefix. Match on
+    # prefix: the earlier check compared 5-part keys against full ids and NEVER matched,
+    # so a resumed run would re-execute completed jobs and append duplicate episodes.
+    done_prefixes = {"|".join(eid.split("|")[:5]) for eid in done_ids}
 
     live = [(repo, family, port, util) for repo, family, port, util in roster
             if up(port) and (port_for_run is None or port == port_for_run)]
@@ -177,7 +185,7 @@ def run_phase_episodes(phase: str, roster: list[tuple], port_for_run: int | None
             for scen in SCENARIOS:
                 for rep in range(EPISODES_PER_SCENARIO):
                     eid = f"{phase}|{repo}|{aff}|{scen}|{rep}"
-                    if eid in done:
+                    if eid in done_prefixes:
                         continue
                     jobs.append((repo, family, port, aff, scen, rep))
 
@@ -393,7 +401,16 @@ def run_analyze() -> None:
         p = episodes_path(phase)
         if not p.exists():
             continue
-        eps = [json.loads(l) for l in open(p) if l.strip()]
+        eps_by_id: dict[str, dict] = {}
+        for line in open(p):
+            if not line.strip():
+                continue
+            rec = json.loads(line)
+            # Dedup by episode_id (last wins): the resume check had a prefix-matching bug
+            # that could append a completed job twice; analysis must count each episode
+            # once regardless of what the logs contain.
+            eps_by_id[rec["episode_id"]] = rec
+        eps = list(eps_by_id.values())
         score_map: dict[str, list[dict]] = {}
         for sp in RUNS.glob("scores__*.jsonl"):
             for l in open(sp):
