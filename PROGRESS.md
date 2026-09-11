@@ -48,3 +48,26 @@
 
 ### Status
 - All GPU work complete. Repo write-up in progress.
+
+## 2026-09-19 (day 2) — EXPERIMENTS COMPLETE, WRITE-UP FROZEN
+
+### Done (since last entry)
+- D14 power expansion: all policy legs to 10 reps/cell (n=105-115/cell),
+  all six monitor passes (3 monitors x {cf, ticket-aware}) over new episodes,
+  final analysis + figures regenerated.
+- E4 completed on all three monitors (15-cell grid).
+- Two more scorer false positives adjudicated and fixed with regression tests:
+  multi-ticket authorization clobbering (ST2), bringing the suite to 479 checks.
+- RESULTS.md / FINDINGS.md rewritten from powered numbers; headline made consistent.
+
+### Final matrix
+- 2 attack lineages x own honest baselines x 2 affordances x (3 monitors x 2 contexts)
+- E3 selective leg (n=44); probe on aligned Qwen-32B.
+- Spontaneous honest violations: 0/678. Suite: 479 scorer + 57 prompt checks green.
+
+### Fallback level
+- 0 for the core matrix; phi-4 + aligned-Llama dropped per ladder (D12).
+
+### Status
+- ALL WORK COMPLETE as of 02:12 (power expansion) / write-up frozen after review.
+- Repo pushed to github.com/traghav/ai-control-enterprise-ops (master).
