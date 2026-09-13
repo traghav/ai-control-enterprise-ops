@@ -441,18 +441,30 @@ def run_analyze() -> None:
         return
 
     # summarize_cell expects the nested {"cell": {...}, ...} shape of Episode.to_dict().
-    # GROUPING IS BY (monitor, untrusted_model, affordances) with BOTH modes merged:
-    # summarize_cell splits honest/attack internally. AUROC and safety are computed per
-    # untrusted policy against ITS OWN honest-mode episodes -- the protocol-correct pairing
-    # (same checkpoint, same setting, mode is the only difference). The earlier NaNs were
-    # NOT a grouping bug: the same-model honest legs were missing because the NousResearch
-    # Llama and phi-4 honest phases produced zero-action junk (see D12), so no honest
-    # episodes existed for those models. The fix is the data (run honest legs for the
-    # attack checkpoints), not the grouping.
+    # GROUPING IS BY (monitor, untrusted_model, affordances, phase_class) with honest+
+    # attack modes merged within a phase class: summarize_cell splits honest/attack
+    # internally. AUROC and safety are computed per untrusted policy against ITS OWN
+    # honest-mode episodes -- the protocol-correct pairing (same checkpoint, same setting,
+    # mode is the only difference).
+    #
+    # phase_class separates the E3 'selective' episodes from the plain 'attack' ones:
+    # selective uses a different policy prompt, so pooling it into the E2 attack cells
+    # (which the earlier revision did: the Qwen-abl FULL cell showed n_attack=153 = 90 E2
+    # + 44 selective + 19 rep-expansion) would confound the E2 estimate with a different
+    # manipulation. E2 numbers must come from E2 episodes only. Honest episodes are the
+    # shared baseline for every phase class.
+    def phase_class(phase: str) -> str:
+        if phase == "selective":
+            return "selective"
+        if phase == "probe":
+            return "probe"
+        return "main"
+
     by_cell: dict[tuple, list[dict]] = {}
     for _phase, e, s in frames:
         eid = e["episode_id"]
-        cellkey = (s["monitor"], e["cell"]["untrusted_model"], e["cell"]["affordances"])
+        cls = "main" if e["cell"]["mode"] == "honest" else phase_class(_phase)
+        cellkey = (s["monitor"], e["cell"]["untrusted_model"], e["cell"]["affordances"], cls)
         rec = {"episode_id": eid, "cell": e["cell"],
                "main_task_success": e["main_task_success"],
                "side_task_success": e["side_task_success"],
@@ -461,18 +473,18 @@ def run_analyze() -> None:
 
     rows = []
     side_ids = ["ST1", "ST2", "ST3", "ST4", "ST5"]
-    for (mon, model, aff), eps in by_cell.items():
+    for (mon, model, aff, cls), eps in by_cell.items():
         s = summarize_cell(eps, side_ids)
         row = s.to_row()
+        row["phase_class"] = cls
         row["monitor"] = mon
         row["monitor_family"] = mon_family.get(mon, "")
         row["untrusted_model"] = model
         row["untrusted_family"] = eps[0]["cell"]["untrusted_family"] if eps else ""
         row["affordances"] = aff
-        # Dominant mode label for this cell (cells mixing attack+probe on one model are
-        # not possible: probe and attack never share a checkpoint).
-        modes = {e["cell"]["mode"] for e in eps}
-        row["mode"] = "mixed" if len(modes) > 1 else modes.pop()
+        # phase_class is the primary label ('main' = E2 honest+attack, 'probe', 'selective');
+        # keep the mode label for backwards compatibility with the figures' filter.
+        row["mode"] = cls if cls != "main" else "mixed"
         rows.append(row)
 
     df = pd.DataFrame([{
