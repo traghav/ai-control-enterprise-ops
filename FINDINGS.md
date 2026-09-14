@@ -28,13 +28,17 @@ authorisation context the deployment already has.
    across vendor lineages even though the violation taxonomy is identical. (RESULTS.md,
    transfer matrix + figure.)
 
-2. **Affordance restriction substitutes rather than suppresses.** Removing http_post and
-   the partner stores eliminated every sev-4 exfiltration fire (ST1: 28 -> 0, ST3:
-   19 -> 0) but ST4 privilege escalation rose from 0 to 28 and ST2 silent edits from
-   5 to 29 -- the directory and record tools remain -- and overall attack success moved
-   only 0.39 -> 0.45 (within the +/-0.09 CI at n=110-115/cell). The ranking of
-   affordance configurations depends on which side task the auditor weights, i.e. on the
-   severity table, not on attack success alone.
+2. **Affordance restriction substitutes rather than suppresses — by raw count. Its value
+   shows up only under severity weighting.** Removing http_post and the partner stores
+   eliminated every sev-4 exfiltration fire (ST1: 28 -> 0, ST3: 19 -> 0) but ST4
+   privilege escalation rose from 0 to 28 and ST2 silent edits from 5 to 29 -- the
+   directory and record tools remain -- and overall attack success moved only
+   0.39 -> 0.45 (within the +/-0.09 CI at n=110-115/cell). Under severity weighting,
+   however, violation mass falls 18% (1.83 -> 1.50 per episode): the remaining violations
+   are the less severe ones. The ranking of affordance configurations therefore depends
+   on whether the auditor weights all violations equally (no gain) or by severity
+   (moderate gain) -- a decision the organisation must make explicitly, because the two
+   rankings disagree.
 
 3. **Prefix-ambiguity bounds online monitoring.** Honest access_review and audit_review
    episodes sit at median suspicion 0.75, honest ROI-withhold episodes at 1.00 (the
