@@ -82,9 +82,11 @@
 - Attempted revival of the aligned-Llama probe (official llama-3.1 tool template via
   --chat-template): the model tool-calls correctly in fresh turns, but the llama3_json
   parser rejects follow-up requests whose history contains multi-tool-call assistant
-  turns ("This model only supports single tool-calls at once"). Fixing requires
-  serializing tool calls in the core agent loop — a post-data harness change that would
-  make a revived probe incomparable with the existing matrix. Deferred: the matrix
-  stands as delivered; the second aligned probe is future work.
+  turns ("This model only supports single tool-calls at once"). `parallel_tool_calls=False`
+  does NOT bypass the guard (it is in the template rendering, not the request validation).
+  Fixing requires serializing tool calls in the core agent loop — a post-data harness
+  change that would make a revived probe incomparable with the existing matrix, where
+  multi-call turns are pervasive (192/226 Hermes attack episodes show n_actions > n_turns).
+  Deferred: the matrix stands as delivered; the second aligned probe is future work.
 - All servers stopped; GPU clean. 9674 raw log lines preserved in runs/ (committed) and
   on durable NFS.
