@@ -77,3 +77,14 @@
   to the durable NFS mount: /lambda/nfs/autocontrol/backup_20260919/ (verified sizes).
   The GitHub repo carries the analysis artifacts; the NFS copy additionally preserves
   every raw JSONL episode and score log.
+
+### Post-freeze notes (Sun 07:00)
+- Attempted revival of the aligned-Llama probe (official llama-3.1 tool template via
+  --chat-template): the model tool-calls correctly in fresh turns, but the llama3_json
+  parser rejects follow-up requests whose history contains multi-tool-call assistant
+  turns ("This model only supports single tool-calls at once"). Fixing requires
+  serializing tool calls in the core agent loop — a post-data harness change that would
+  make a revived probe incomparable with the existing matrix. Deferred: the matrix
+  stands as delivered; the second aligned probe is future work.
+- All servers stopped; GPU clean. 9674 raw log lines preserved in runs/ (committed) and
+  on durable NFS.
