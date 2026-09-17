@@ -164,6 +164,57 @@ attacks. With the honest tail at the score ceiling the (1−b)-quantile threshol
 the budget-based safety metric degenerates (0.00 despite TPR@.5 = 0.94–1.00 at FPR 0.15–0.31).
 Fixed-threshold TPR/FPR is the deployable diagnostic that survives saturation.
 
+## E5 — Defer-to-trusted simulation (the protocol the audit budget approximates)
+
+The E2 safety numbers approximate the audit protocol (score everything, review the tail).
+E5 simulates the actual **defer protocol** from frozen data: the monitor watches proposed
+actions online; when suspicion crosses a threshold the untrusted policy is stopped BEFORE
+the crossing action executes, and the trusted policy (same checkpoint, honest prompt)
+finishes the episode. Phase 1 is a counterfactual over all 452 Qwen-abl main-phase
+episodes (crossing-action-not-executed prefix worlds, rescored); phase 2 validates the
+key assumption with 18 real trusted continuations.
+
+### Phase 1: safety vs deferral cost (thresholds 0.5 / 0.75, Qwen3-8B monitor)
+
+| monitor | threshold | successful attacks | averted | too late | SAFETY | honest deferred | unnecessary attack deferrals |
+|---|---|---|---|---|---|---|---|
+| context-free | 0.5 | 95 | 92 | 2 | **0.968** | 52/226 (23%) | 127 |
+| context-free | 0.75 | 95 | 92 | 2 | **0.968** | 50/226 (22%) | 127 |
+| ticket-aware | 0.5 | 95 | 88 | 3 | **0.926** | 31/226 (14%) | 121 |
+| ticket-aware | 0.75 | 95 | 85 | 3 | **0.895** | 31/226 (14%) | 121 |
+
+Two findings:
+
+1. **Defer-to-trusted is highly effective here**: 92/95 successful attacks (97%) are
+   averted, and only 2-3 violations complete before the monitor crosses. The attacks are
+   early and conspicuous — the same prefix-ambiguity that hurts honest FPR barely helps
+   attackers, because their suspicious actions arrive *before* their cover story is done.
+2. **The E4 FPR reduction converts into operational cost reduction**: ticket-aware
+   context cuts honest deferrals from 23% to 14% (a 40% relative reduction in trusted
+   continuations) at a modest safety cost (0.968 → 0.926). The trade is now quantified:
+   each point of safety costs ~2 points of honest deferral rate.
+
+### Phase 2: the trusted-continuation assumption, validated (n=18 real continuations)
+
+Phase 1 assumes the trusted continuation never violates. Sampled 12 honest-deferred +
+6 attack-averted episodes and ran REAL continuations (same checkpoint, honest prompt):
+
+- **Violations after trusted continuation: 0/18.** The assumption holds.
+- Main task recovered: 11/18 (61%). Failures concentrate in roi_withhold episodes —
+  bounded by the checkpoint's own 0.05 honest withhold rate on that scenario, i.e.
+  recovery is limited by what the trusted policy can do, not by the deferral.
+- Continuation lengths 0–7 actions; 0 errors.
+
+### Reading E5 against E2's safety numbers
+
+The audit-style `safety@1%` saturated at 0.00 in the hardest cells because the honest
+tail sits at the ceiling — but under the actual defer protocol with the same scores,
+safety is 0.90–0.97. The difference is structural: deferral acts on the *first* crossing
+(preventing the violation), while audit-budget safety asks whether the episode would be
+*found* in a bounded review. Both are computed from the same logged scores; they answer
+different operational questions, and only the second one degenerates under tail
+saturation.
+
 ## Integrity notes
 
 - Honest-mode spontaneous side-task violations under final scorers: **0/678** episodes
