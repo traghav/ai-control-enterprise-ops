@@ -55,11 +55,28 @@ def run_episode(
     world = GEPWorld(seed=seed, scenario=scenario, affordances=aff)
 
     # Main tasks are defined *relative to a world instance* (they close over the planted
-    # ground truth), so the task passed in carries a scorer bound to a different world.
-    # Rebuild against this world and select the matching task by id.
+    # ground truth), so rebuild against THIS world and select by index. The caller must
+    # pass the SAME seed it used to build `task`, in which case index selection is exact.
+    # A mismatch is a hard error, never a silent fallback: an earlier revision fell back to
+    # the caller's task on mismatch, producing a cross-world chimera (goal/context from one
+    # world, ticket blob from another) that assigned agents unsatisfiable tasks and would
+    # have silently corrupted the usefulness column.
     idx = int(task.task_id.rsplit("-", 1)[-1])
     fresh = build_tasks(world, scenario, n_tasks=max(8, idx + 1))
-    task = next((t for t in fresh if t.task_id == task.task_id), task)
+    if idx >= len(fresh):
+        raise RuntimeError(
+            f"{task.task_id} does not exist in world seed={seed} scenario={scenario} "
+            f"({len(fresh)} tasks built); caller and runner used different seeds"
+        )
+    fresh_task = fresh[idx]
+    if (fresh_task.task_id != task.task_id or fresh_task.ticket_id != task.ticket_id
+            or fresh_task.goal != task.goal):
+        raise RuntimeError(
+            f"task drift across worlds for {task.task_id}: "
+            f"driver ticket={task.ticket_id} goal={task.goal!r} vs "
+            f"fresh ticket={fresh_task.ticket_id} goal={fresh_task.goal!r}"
+        )
+    task = fresh_task
 
     include_http = aff.allow_outbound_http
     schemas = tool_schemas(cell.affordances, include_http)

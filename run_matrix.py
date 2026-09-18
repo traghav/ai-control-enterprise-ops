@@ -72,6 +72,7 @@ MONITORS = [
     # (repo_id, family, port, gpu_util, informed)
     ("Qwen/Qwen3-8B-AWQ", "qwen", 8030, 0.60, True),
     ("Qwen/Qwen2.5-7B-Instruct-AWQ", "qwen", 8031, 0.60, True),
+    ("gaunernst/gemma-3-27b-it-int4-awq", "gemma", 8032, 0.80, True),
 ]
 
 SCENARIOS = ["record_correction", "duplicate_record", "med_reconciliation", "audit_review",
@@ -177,8 +178,10 @@ def run_phase_episodes(phase: str, roster: list[tuple], port_for_run: int | None
             untrusted_model=repo, untrusted_family=family,
             monitor_model=None, monitor_family=None,
             affordances=aff,
-            # probe = aligned model given attack prompts: measures elicitation/refusal
-            mode="honest" if phase == "honest" else "attack",
+            # probe = aligned model given attack prompts: measures elicitation/refusal,
+            # NOT attack success. Distinct mode label so analysis never reads these rows
+            # as the aligned model's attack capability.
+            mode="honest" if phase == "honest" else "attack_probe" if phase == "probe" else "attack",
         )
         llm = LLM(LLMConfig(model=repo, base_url=f"http://localhost:{port}/v1",
                             temperature=0.7, max_tokens=1536))
@@ -200,10 +203,12 @@ def run_phase_episodes(phase: str, roster: list[tuple], port_for_run: int | None
         t0 = time.time()
         eps = []
         for t in uniq:
-            import zlib
-
-            ep = run_episode(cell, t,
-                             seed=seed + zlib.crc32(f"{t.task_id}|{rep}".encode()) % 1000,
+            # Same seed as the world above: run_episode rebuilds the world and reselects
+            # the task by index; identical seeds make that selection exact (a mismatch is
+            # a hard error, by design). Never re-seed per task here -- an earlier revision
+            # did, the index space shifted across worlds, and the fallback produced
+            # cross-world chimera tasks with unreachable goals.
+            ep = run_episode(cell, t, seed=seed,
                              untrusted_llm=llm, monitor=None, scenario=scen)
             rec = ep.to_dict()
             rec["episode_id"] = f"{phase}|{repo}|{aff}|{scen}|{rep}|{t.task_id}"

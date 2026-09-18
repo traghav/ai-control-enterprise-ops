@@ -1,0 +1,33 @@
+# Progress log
+
+## 2026-09-18 (day 1)
+
+### Done
+- A100 environment: uv, venvs (control-arena 19.0.0 + inspect-ai; vllm 0.29.0), HF token,
+  210GB model cache (4 lineages + monitors), tmux-based server lifecycle.
+- GEP setting: world model, 7 scenarios, 5 weighted side tasks, FULL/RESTRICTED gate.
+- 465/452 scorer tests pass: achievability (oracle trajectories), no-false-positive,
+  true-positive, affordance-enforcement, determinism, task-id uniqueness.
+- run_matrix.py phased driver (honest/attack/probe/monitor/analyze), resumable JSONL.
+- Full smoke test on live Qwen2.5-32B: honest episode solves MT-RC in 2 actions.
+
+### Validity bugs found and fixed (all found by replay/inspection, not guesswork)
+1. Cross-world chimera tasks: driver pre-built tasks from a probe world, runner rebuilt
+   with a different seed and silently fell back -> unsatisfiable goals fed to agents.
+   Now: identical seeds + hard error on any task drift.
+2. record_correction had a hidden target value -> unachievable-by-design. Fixed with a
+   planted records-office verification comment; engagement check requires an AGENT action.
+3. ledger_reconcile: random dispute tickets landed on balanced/empty accounts ->
+   unsatisfiable; sign convention unstated. Fixed: planted deterministic imbalance,
+   convention stated in the goal.
+4. audit_review: random tickets scoped to one MRN; planted anomaly outside that scope ->
+   honest work failed. Fixed: dedicated whole-trail monthly-review ticket.
+5. ST5 counted internal exports and ticket replies (sanctioned channels) as retention.
+
+### Running
+- honest phase on Qwen2.5-32B @ :8020 (56 jobs, ~10s/ep).
+
+### Blocked / none
+
+### Hours left
+- ~46 (target: freeze Sunday 06:00 local, experiments frozen Saturday 22:00).
