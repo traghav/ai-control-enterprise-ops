@@ -402,8 +402,11 @@ def main() -> None:
         roster = [r for r in roster if args.model in r[0]]
         if not roster:
             raise SystemExit("no matching model")
-    port = args.port or roster[0][2]
-    run_phase_episodes(phase, roster, port)
+    # No default port: the driver runs whatever roster models are CURRENTLY live, each on
+    # its own port. (Defaulting to roster[0]'s port made the driver silently skip a live
+    # model on a different port -- the Llama honest leg ran "OK" having done nothing.)
+    # --port still restricts to one port when explicitly given.
+    run_phase_episodes(phase, roster, args.port)
 
 
 if __name__ == "__main__":
