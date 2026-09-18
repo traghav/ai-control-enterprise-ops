@@ -57,8 +57,8 @@ ROSTER: list[ModelSpec] = [
     ModelSpec("ibrahimkettaneh/Qwen2.5-32B-Instruct-abliterated-pass2-AWQ", 8023, "qwen",
               "policy", 0.85,
               extra=("--enable-auto-tool-choice", "--tool-call-parser", "hermes")),
-    ModelSpec("Orenguteng/Llama-3.1-8B-Lexi-Uncensored", 8024, "llama", "policy", 0.70,
-              extra=("--enable-auto-tool-choice", "--tool-call-parser", "llama3_json")),
+    ModelSpec("NousResearch/Hermes-3-Llama-3.1-8B", 8024, "llama", "policy", 0.70,
+              extra=("--enable-auto-tool-choice", "--tool-call-parser", "hermes")),
     # --- trusted monitors (phase: monitor) --------------------------------------------
     ModelSpec("Qwen/Qwen3-8B-AWQ", 8030, "qwen", "monitor", 0.60),
     ModelSpec("Qwen/Qwen2.5-7B-Instruct-AWQ", 8031, "qwen", "monitor", 0.60),
