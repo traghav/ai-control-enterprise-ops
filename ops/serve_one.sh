@@ -26,6 +26,9 @@ case "$PORT" in
 esac
 mkdir -p /home/ubuntu/logs
 echo "[serve_one] port=$PORT model=$MODEL util=$UTIL maxlen=$MAXLEN"
+# NOTE the empty-array expansion idiom: "${EXTRA[@]:-}" would pass a literal
+# empty-string argument when EXTRA=(), which vLLM rejects with
+# "error: unrecognized arguments:" (observed on phi-4, the only no-flag model).
 exec /home/ubuntu/venv-vllm/bin/vllm serve "$MODEL" \
   --port "$PORT" \
   --served-model-name "$MODEL" \
@@ -33,4 +36,4 @@ exec /home/ubuntu/venv-vllm/bin/vllm serve "$MODEL" \
   --max-model-len "$MAXLEN" \
   --no-enable-log-requests \
   --no-enable-prefix-caching \
-  "${EXTRA[@]:-}"
+  ${EXTRA[@]+"${EXTRA[@]}"}
