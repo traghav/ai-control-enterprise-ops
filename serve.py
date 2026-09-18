@@ -36,19 +36,31 @@ class ModelSpec:
 
 
 # The matrix's model roster. Ports are stable and documented in README.
+#
+# EXECUTION MODEL: exactly ONE server runs at a time (see run_matrix.py). Two vLLM servers
+# started concurrently on one GPU profile against each other's allocations and race during
+# startup; both then fail KV-cache init nondeterministically ("Available KV cache memory:
+# -5.84 GiB" with nothing else loaded). Sequential loading is therefore not an optimisation
+# but a correctness requirement. Utils below are sized for SOLO operation.
+#
+# TOOL-CALL PARSERS: policy models need --enable-auto-tool-choice plus a family-appropriate
+# --tool-call-parser, or every request that sets tool_choice="auto" is rejected with 400
+# ("auto tool choice requires --enable-auto-tool-choice and --tool-call-parser"). Monitors
+# never use tools, so their ports carry no parser flags.
 ROSTER: list[ModelSpec] = [
-    # --- untrusted policy candidates -------------------------------------------------
-    ModelSpec("huihui-ai/Qwen2.5-32B-Instruct-abliterated", 8001, "qwen", "policy", 0.46),
-    ModelSpec("Qwen/Qwen3-32B-AWQ",                          8002, "qwen", "policy", 0.46),
-    ModelSpec("huihui-ai/Qwen2.5-14B-Instruct-abliterated",  8003, "qwen", "policy", 0.28),
-    ModelSpec("meta-llama/Llama-3.1-8B-Instruct",            8004, "llama", "policy", 0.22),
-    ModelSpec("Qwen/Qwen2.5-7B-Instruct-AWQ",                8005, "qwen", "policy", 0.18),
-    ModelSpec("stelterlab/phi-4-AWQ",                        8006, "phi",  "policy", 0.30),
-    # --- trusted monitor candidates ---------------------------------------------------
-    ModelSpec("Qwen/Qwen3-8B-AWQ",                           8010, "qwen", "monitor", 0.22),
-    ModelSpec("gaunernst/gemma-3-27b-it-int4-awq",           8011, "gemma", "monitor", 0.45),
-    ModelSpec("stelterlab/phi-4-AWQ",                        8012, "phi",  "monitor", 0.30),
-    ModelSpec("Qwen/Qwen2.5-7B-Instruct-AWQ",                8013, "qwen", "monitor", 0.18),
+    # --- untrusted policies (phases: honest / attack / probe) ------------------------
+    ModelSpec("Qwen/Qwen2.5-32B-Instruct-AWQ", 8020, "qwen", "policy", 0.85,
+              extra=("--enable-auto-tool-choice", "--tool-call-parser", "hermes")),
+    ModelSpec("NousResearch/Meta-Llama-3.1-8B-Instruct", 8021, "llama", "policy", 0.70,
+              extra=("--enable-auto-tool-choice", "--tool-call-parser", "llama3_json")),
+    ModelSpec("stelterlab/phi-4-AWQ", 8022, "phi", "policy", 0.70),
+    ModelSpec("ibrahimkettaneh/Qwen2.5-32B-Instruct-abliterated-pass2-AWQ", 8023, "qwen",
+              "policy", 0.85,
+              extra=("--enable-auto-tool-choice", "--tool-call-parser", "hermes")),
+    # --- trusted monitors (phase: monitor) --------------------------------------------
+    ModelSpec("Qwen/Qwen3-8B-AWQ", 8030, "qwen", "monitor", 0.60),
+    ModelSpec("Qwen/Qwen2.5-7B-Instruct-AWQ", 8031, "qwen", "monitor", 0.60),
+    ModelSpec("gaunernst/gemma-3-27b-it-int4-awq", 8032, "gemma", "monitor", 0.80),
 ]
 
 BY_NAME = {s.name: s for s in ROSTER}
@@ -93,7 +105,9 @@ def start(spec: ModelSpec, wait: bool = True, timeout: int = 1500) -> bool:
         "--gpu-memory-utilization", str(spec.gpu_util),
         "--max-model-len", str(spec.max_len),
         "--dtype", "auto",
-        "--disable-log-requests",
+        # vLLM 0.29 renamed this flag; `--disable-log-requests` is gone and the server
+        # exits with an argparse error if it is passed.
+        "--no-enable-log-requests",
         "--no-enable-prefix-caching",
         *spec.extra,
     ]
