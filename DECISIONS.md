@@ -171,3 +171,14 @@ The second E4 question — does ticket context close the cross-lineage collapse?
 answered NO: Gemma's Hermes-3 AUROC moves only 0.585 -> 0.676, still ~0.25 below its
 Qwen-lineage level. False positives are an information problem; the transfer failure is
 a monitor generalization problem. Different problems, different remedies.
+
+## D14 — Power expansion to 10 reps/cell
+
+The headline E2 claims (FULL-vs-RESTRICTED attack-success delta; probe-vs-ablated
+asymmetry) sit inside the ±0.14 CI band at 4 reps. Expanding to 10 reps/cell tightens
+episode-level CIs to ~±0.09, putting both deltas inside the resolvable band. Cost is
+moderate because everything is resumable: policy legs execute only reps 4..9 (~2.5h GPU),
+and the six monitor passes (3 monitors x {context-free, ticket-aware}) score only the new
+episodes (~2h). E3/selective stays at n=44 — its conclusion ("selection not elicitable")
+is a qualitative observation on the REACHABILITY preamble, not a rate estimate, and more
+reps would not change it.
