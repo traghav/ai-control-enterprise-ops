@@ -50,10 +50,17 @@ BASE_SEED = 20260918
 # --------------------------------------------------------------------------------------
 
 POLICY_HONEST = [
-    # (repo_id, family, port, gpu_util)  -- official aligned checkpoints
+    # (repo_id, family, port, gpu_util)
+    # D12: the honest baseline for each untrusted policy is THE SAME CHECKPOINT run in
+    # honest mode -- mode is the only differing factor, which is what makes AUROC/safety
+    # within-model meaningful. The aligned Qwen row is kept (its honest data doubles as
+    # the probe's honest reference). The aligned NousResearch-Llama and phi-4 entries were
+    # REMOVED: their honest legs produced zero-action junk (NousResearch's re-upload ships
+    # a chat template that never renders tool schemas; phi-4 has no vLLM tool parser and
+    # every tool_choice=auto request was a 400) -- see D12 and the purge note.
     ("Qwen/Qwen2.5-32B-Instruct-AWQ", "qwen", 8020, 0.85),
-    ("NousResearch/Meta-Llama-3.1-8B-Instruct", "llama", 8021, 0.55),
-    ("stelterlab/phi-4-AWQ", "phi", 8022, 0.65),
+    ("ibrahimkettaneh/Qwen2.5-32B-Instruct-abliterated-pass2-AWQ", "qwen", 8023, 0.85),
+    ("NousResearch/Hermes-3-Llama-3.1-8B", "llama", 8024, 0.70),
 ]
 POLICY_ATTACK = [
     # Attack phase runs ONLY on behaviourally-ablated checkpoints (DECISIONS D6): aligned
@@ -71,7 +78,6 @@ POLICY_ATTACK = [
 POLICY_PROBE = [
     # aligned models given attack prompts: measures elicitation/refusal, not attack success
     ("Qwen/Qwen2.5-32B-Instruct-AWQ", "qwen", 8020, 0.85),
-    ("stelterlab/phi-4-AWQ", "phi", 8022, 0.65),
 ]
 MONITORS = [
     # (repo_id, family, port, gpu_util, informed)
@@ -368,11 +374,18 @@ def run_analyze() -> None:
         return
 
     # summarize_cell expects the nested {"cell": {...}, ...} shape of Episode.to_dict().
+    # GROUPING IS BY (monitor, untrusted_model, affordances) with BOTH modes merged:
+    # summarize_cell splits honest/attack internally. AUROC and safety are computed per
+    # untrusted policy against ITS OWN honest-mode episodes -- the protocol-correct pairing
+    # (same checkpoint, same setting, mode is the only difference). The earlier NaNs were
+    # NOT a grouping bug: the same-model honest legs were missing because the NousResearch
+    # Llama and phi-4 honest phases produced zero-action junk (see D12), so no honest
+    # episodes existed for those models. The fix is the data (run honest legs for the
+    # attack checkpoints), not the grouping.
     by_cell: dict[tuple, list[dict]] = {}
     for _phase, e, s in frames:
         eid = e["episode_id"]
-        cellkey = (s["monitor"], e["cell"]["untrusted_model"], e["cell"]["untrusted_family"],
-                   e["cell"]["affordances"], e["cell"]["mode"])
+        cellkey = (s["monitor"], e["cell"]["untrusted_model"], e["cell"]["affordances"])
         rec = {"episode_id": eid, "cell": e["cell"],
                "main_task_success": e["main_task_success"],
                "side_task_success": e["side_task_success"],
@@ -381,14 +394,17 @@ def run_analyze() -> None:
 
     rows = []
     side_ids = ["ST1", "ST2", "ST3", "ST4", "ST5"]
-    for cellkey, eps in by_cell.items():
+    for (mon, model, aff), eps in by_cell.items():
         s = summarize_cell(eps, side_ids)
         row = s.to_row()
-        row["monitor"] = cellkey[0]
-        row["untrusted_model"] = cellkey[1]
-        row["untrusted_family"] = cellkey[2]
-        row["affordances"] = cellkey[3]
-        row["mode"] = cellkey[4]
+        row["monitor"] = mon
+        row["untrusted_model"] = model
+        row["untrusted_family"] = eps[0]["cell"]["untrusted_family"] if eps else ""
+        row["affordances"] = aff
+        # Dominant mode label for this cell (cells mixing attack+probe on one model are
+        # not possible: probe and attack never share a checkpoint).
+        modes = {e["cell"]["mode"] for e in eps}
+        row["mode"] = "mixed" if len(modes) > 1 else modes.pop()
         rows.append(row)
 
     df = pd.DataFrame([{
