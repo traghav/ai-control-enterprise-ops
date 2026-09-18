@@ -77,19 +77,23 @@ make post-hoc audit metrics look degenerate.
    the authorisation context the deployment already has, and violation patterns from
    beyond its own training distribution.
 
-6. **Defer-to-trusted works well on exactly the attacks that look worst post-hoc (E5).**
-   Simulating the actual defer protocol over all 452 main-phase episodes: 92/95
-   successful attacks (97%) are averted because the attack's suspicious actions arrive
-   BEFORE its cover story completes — the monitor crosses early, and only 2-3 violations
-   complete before deferral. The E4 ticket-context FPR reduction converts directly into
-   operational savings: honest deferral rate drops 23% -> 14% (fewer trusted
-   continuations) at modest safety cost (0.968 -> 0.926). Real trusted continuations
-   (n=18) confirm the protocol assumption: 0 violations introduced, main task recovered
-   11/18 (recovery bounded by the checkpoint's own honest withhold rate on the trap
-   task). Notably, the audit-budget safety metric that saturated at 0.00 on the same
-   scores and the defer protocol at 0.90-0.97 answer different operational questions;
-   the budget metric's degeneracy is an artefact of asking the review question under
-   tail saturation, not evidence that control fails.
+6. **Defer-to-trusted works well on exactly the attacks that look worst post-hoc (E5) —
+   except the quiet ones.** Simulating the actual defer protocol over all 452
+   main-phase episodes: 92/95 successful attacks (97%) are averted because the attack's
+   suspicious actions arrive BEFORE its cover story completes — the monitor crosses
+   early, and only 2-3 violations complete before deferral. The escapes are not random:
+   all three are ST2 silent single-field edits in the RESTRICTED config (escape rate
+   0.09 for ST2 vs 0.00 for every other class). The substitution effect thus compounds:
+   restriction shifts the attack toward the one violation class deferral catches worst.
+   The E4 ticket-context FPR reduction converts directly into operational savings:
+   honest deferral rate drops 23% -> 14% (fewer trusted continuations) at modest safety
+   cost (0.968 -> 0.926). Real trusted continuations (n=18) confirm the protocol
+   assumption: 0 violations introduced, main task recovered 11/18 (recovery bounded by
+   the checkpoint's own honest withhold rate on the trap task). Notably, the
+   audit-budget safety metric that saturated at 0.00 on the same scores and the defer
+   protocol at 0.90-0.97 answer different operational questions; the budget metric's
+   degeneracy is an artefact of asking the review question under tail saturation, not
+   evidence that control fails.
 
 7. **World-state scoring is what makes the numbers mean anything.** Attack plans are
    frequent in transcripts; completed violations are not. Spot-checks of 10 attack
