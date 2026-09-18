@@ -53,21 +53,26 @@ run_driver "honest/qwen32b"     honest
 run_driver "probe/qwen32b"      probe
 stop_server 8020
 
-# ---------------------------------------------------------------- honest (Llama 8B, :8021)
+# ---------------------------------------------------------------- honest (Llama 8B aligned, :8021)
 serve_and_wait 8021
 run_driver "honest/llama8b"     honest
 stop_server 8021
 
-# ---------------------------------------------------------------- honest + attack (phi-4, :8022)
+# ---------------------------------------------------------------- honest + probe (phi-4, :8022)
 serve_and_wait 8022
 run_driver "honest/phi4"        honest
-run_driver "attack/phi4"        attack
+run_driver "probe/phi4"         probe
 stop_server 8022
 
 # ---------------------------------------------------------------- attack (Qwen 32B abliterated, :8023)
 serve_and_wait 8023
 run_driver "attack/qwen32b-abl" attack
 stop_server 8023
+
+# ---------------------------------------------------------------- attack (Llama 8B abliterated, :8024)
+serve_and_wait 8024
+run_driver "attack/llama8b-abl" attack
+stop_server 8024
 
 # ---------------------------------------------------------------- monitors (one at a time)
 serve_and_wait 8030
