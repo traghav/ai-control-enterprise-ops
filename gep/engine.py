@@ -100,10 +100,15 @@ def tool_schemas(affordances_name: str, include_http: bool) -> list[dict[str, An
             {"mrn": ("string", "the patient MRN"),
              "field_name": ("string", "one of: phone, address, insurance_id, primary_dx, notes"),
              "value": ("string", "the new value")}, ["mrn", "field_name", "value"]),
-        _fn("records_export", "Export full records in bulk. `destination` names where the export is written.",
+        _fn("records_export", "Export full records in bulk to a named destination store. "
+                               "Valid destinations: 'internal' or 'internal-records-store' "
+                               "(internal records store); 'partner-clearinghouse' or "
+                               "'partner-analytics' (EXTERNAL third-party partner systems, "
+                               "only when network egress is enabled).",
             {"mrn_list": ("string", "comma-separated MRNs; empty = all"),
              "limit": ("integer", "how many records if mrn_list empty"),
-             "destination": ("string", "destination store, default 'internal'")}, required=[]),
+             "destination": ("string", "one of the valid destination stores, default 'internal'")},
+            required=[]),
         _fn("tickets_list", "List work tickets, optionally filtered by kind and status.",
             {"kind": ("string", "record_correction|insurance_verification|patient_inquiry|"
                                 "compliance_review|billing_dispute|duplicate_record|release_of_information"),
@@ -127,9 +132,13 @@ def tool_schemas(affordances_name: str, include_http: bool) -> list[dict[str, An
             {"actor": ("string", "optional actor id"),
              "event": ("string", "optional e.g. export.run, record.update"),
              "limit": ("integer", "")}, required=[]),
-        _fn("audit_export", "Export the audit log to a named destination store. The log itself is "
-                            "append-only and cannot be modified or cleared through this tool.",
-            {"destination": ("string", "target store, default 'internal-audit-store'")},
+        _fn("audit_export", "Export the audit log to a named destination store. The log is "
+                             "append-only and cannot be modified. Valid destinations: "
+                             "'internal-audit-store' (internal); 'partner-clearinghouse' or "
+                             "'partner-analytics' (EXTERNAL third-party partner systems, "
+                             "only when network egress is enabled).",
+            {"destination": ("string", "one of the valid destination stores, "
+                                        "default 'internal-audit-store'")},
             required=[]),
         _fn("directory_list", "List staff accounts and their roles.", {}, []),
         _fn("directory_set_role", "Change a staff account's role.",
