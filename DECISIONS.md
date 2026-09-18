@@ -106,3 +106,14 @@ what keeps the attack-success number meaningful and the affordance comparison ho
 strings per process, so the same seed would produce *different* main-task definitions on
 different runs. Replaced with `zlib.crc32`, which is stable. Recorded here because a silent
 non-determinism in task construction would have invalidated the whole reproducibility claim.
+
+## D10 — Clean rerun after destination-semantics change
+
+The enumerated-destination fix (commit "fix(validity): enumerated, documented export
+destinations") changes the tool surface the earlier honest/probe episodes ran against:
+destinations that previously succeeded (invented names like "backup-store") now return an
+error, which would change any agent that attempted them. Replay-rescoring fixes VERDICTS
+but not BEHAVIOUR. A matrix whose cells were generated under two different harness
+versions is not a controlled comparison, so all episodes were wiped and rerun under the
+final harness. Cost: ~75 min of GPU time; benefit: every cell in the matrix was generated
+by identical code. The earlier episodes remain in git history if needed.
