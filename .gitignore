@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+*.eval
+runs/
+wandb/
+.DS_Store
+.cache/
+hf_cache/
