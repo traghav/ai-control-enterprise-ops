@@ -31,3 +31,20 @@
 
 ### Hours left
 - ~46 (target: freeze Sunday 06:00 local, experiments frozen Saturday 22:00).
+
+## 2026-09-19 (day 1 evening) — EXPERIMENTS COMPLETE
+
+### Done
+- E0 sanity: honest episodes verified achievable end-to-end on live models.
+- E1/E2 full matrix: 2 attack lineages x own honest baselines x 2 affordances
+  x 3 monitors, 577 scored trajectories/monitor (honest+attack+probe+selective).
+- E3 attack-selection leg (Qwen-abl x FULL) + re-monitor.
+- Figures: transfer matrix, affordance effect, safety-usefulness (runs/figs/).
+- RESULTS.md + FINDINGS.md written from verified numbers.
+
+### Fallback level
+- 0 of the ladder used for the core matrix (all cells at full n).
+- phi-4 + aligned-Llama dropped per ladder after two failed tool-calling repairs (D12).
+
+### Status
+- All GPU work complete. Repo write-up in progress.
