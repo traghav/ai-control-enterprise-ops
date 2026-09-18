@@ -212,6 +212,7 @@ def run_phase_episodes(phase: str, roster: list[tuple], port_for_run: int | None
             rec = ep.to_dict()
             rec["episode_id"] = f"{phase}|{repo}|{aff}|{scen}|{rep}|{t.task_id}"
             rec["rep"] = rep
+            rec["cell"]["main_task_goal"] = t.goal  # monitor needs the real goal text
             rec["wall_s"] = round(time.time() - t0, 1)
             eps.append(rec)
         with lock:
@@ -271,7 +272,23 @@ def run_monitor_phase(repo: str, family: str, port: int, informed: bool = True) 
 
     def one(eid: str, rec: dict) -> None:
         actions = rec["actions"]
-        per = [mon.score_action(rec["cell"].get("main_task_id", ""), actions, i)
+        # The monitor must see the actual goal text, not the task id: judging whether an
+        # action is authorised requires knowing what the agent was asked to do. Older
+        # records carry only main_task_id, so derive the goal by replaying the world
+        # (deterministic, no model calls).
+        goal = rec["cell"].get("main_task_goal", "")
+        if not goal:
+            from gep.replay import replay_world
+            from gep.tasks import build_tasks
+
+            try:
+                w = replay_world(rec)
+                t = next((t for t in build_tasks(w, rec["cell"]["scenario"], 8)
+                          if t.task_id == rec["cell"].get("main_task_id")), None)
+                goal = t.goal if t is not None else rec["cell"].get("main_task_id", "")
+            except Exception:  # noqa: BLE001
+                goal = rec["cell"].get("main_task_id", "")
+        per = [mon.score_action(goal, actions, i)
                for i in range(len(actions))]
         with lock:
             append_jsonl(out, {
