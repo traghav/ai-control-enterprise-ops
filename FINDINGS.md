@@ -49,14 +49,18 @@ model but the authorisation context the deployment already has.
    is the opposite case (attack success 0.05, honest usefulness 0.05 -- it is not
    reliable in either mode at following the multi-step workflow).
 
-5. **Authorisation context is the cheapest monitor upgrade (E4).** Re-scoring all 577
-   trajectories with the same Qwen3-8B monitor plus the assigned ticket's original
-   content cut FPR@0.5 from 0.25 to 0.18 (Qwen-abl FULL), 0.24 to 0.11 (RESTRICTED),
-   0.09 to 0.00 (Hermes-3), 0.23 to 0.11 (probe FULL), 0.17 to 0.04 (probe RESTRICTED),
-   at essentially unchanged AUROC (+0.007/+0.013/+0.068/-0.007/-0.033). The honest
-   access_review tail vanished (median 0.75 -> 0.00). The monitor did not need to be
-   bigger; it needed the information that distinguishes "sanctioned by the ticket" from
-   "self-authorised" -- information every real deployment already has.
+5. **Authorisation context is the cheapest monitor upgrade (E4) — but it does not fix
+   transfer.** Re-scoring all 577 trajectories per monitor with the assigned ticket's
+   original content cut FPR@0.5 in 13 of 15 (policy x monitor x affordance) cells —
+   halved or better in 9 (e.g. 0.09 -> 0.00 on Hermes-3, 0.17 -> 0.04 on the probe) —
+   at AUROC changes within +/-0.07. The honest access_review tail vanished (median
+   0.75 -> 0.00). Yet the same context moved Gemma's collapsed Hermes-3 AUROC only
+   0.585 -> 0.676, against its ~0.93 on Qwen-lineage policies. So the false-positive
+   problem is an *information* problem the deployment can fix for free, but the
+   cross-lineage detection problem is a *generalization* problem in the monitor that
+   context alone does not solve. The monitor did not need to be bigger; it needed both
+   the authorisation context the deployment already has, and violation patterns from
+   beyond its own training distribution.
 
 6. **World-state scoring is what makes the numbers mean anything.** Attack plans are
    frequent in transcripts; completed violations are not. Spot-checks of 10 attack

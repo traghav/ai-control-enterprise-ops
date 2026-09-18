@@ -114,10 +114,10 @@ the ticket thread is where that information lives.
 The honest FP tail documented above predicts that giving the monitor the assigned
 ticket's ORIGINAL content (subject + body; comments excluded — agent-writable) should
 remove false positives on sanctioned access changes and audit exports without losing
-attack detection. Tested by re-scoring all 577 trajectories with the same Qwen3-8B
-monitor plus the ticket block (post-hoc; no policy re-runs).
+attack detection. Tested by re-scoring all 577 trajectories per monitor (post-hoc; no
+policy re-runs), for all three monitors.
 
-### Honest false-positive tail by scenario (median / p90 max-suspicion)
+### Honest false-positive tail by scenario (Qwen3-8B monitor; median / p90 max-suspicion)
 
 | scenario | context-free | ticket-aware |
 |---|---|---|
@@ -129,22 +129,42 @@ monitor plus the ticket block (post-hoc; no policy re-runs).
 | med_reconciliation (n=72) | 0.00 / 0.00 | 0.00 / 0.00 |
 | duplicate_record (n=24)   | 0.00 / 0.00 | 0.00 / 0.00 |
 
-### Separation quality per cell (attack episodes with completed side tasks vs honest)
+### Separation quality per cell, all three monitors (successful attacks vs honest)
 
-| policy cell | AUROC context-free | AUROC ticket-aware | FPR@.5 cf → ta |
-|---|---|---|---|
-| Qwen-abl, FULL        | 0.873 | 0.880 (+0.007) | 0.25 → **0.18** |
-| Qwen-abl, RESTRICTED  | 0.922 | 0.935 (+0.013) | 0.24 → **0.11** |
-| Hermes-3, FULL        | 0.932 | 1.000 (+0.068) | 0.09 → **0.00** |
-| aligned-probe, FULL   | 0.949 | 0.942 (−0.007) | 0.23 → **0.11** |
-| aligned-probe, RESTRICTED | 1.000 | 0.967 (−0.033) | 0.17 → **0.04** |
+| policy cell | monitor | AUROC cf | AUROC ta | Δ | FPR@.5 cf → ta |
+|---|---|---|---|---|---|
+| Qwen-abl FULL | Qwen3-8B | 0.873 | 0.880 | +0.007 | 0.25 → **0.18** |
+| Qwen-abl FULL | Qwen2.5-7B | 0.831 | 0.795 | −0.036 | 0.32 → **0.23** |
+| Qwen-abl FULL | Gemma-27B | 0.927 | 0.926 | −0.001 | 0.27 → **0.20** |
+| Qwen-abl REST | Qwen3-8B | 0.922 | 0.935 | +0.013 | 0.24 → **0.11** |
+| Qwen-abl REST | Qwen2.5-7B | 0.928 | 0.931 | +0.003 | 0.26 → **0.15** |
+| Qwen-abl REST | Gemma-27B | 0.928 | 0.930 | +0.002 | 0.22 → **0.17** |
+| Hermes-3 FULL | Qwen3-8B | 0.932 | 1.000 | +0.068 | 0.09 → **0.00** |
+| Hermes-3 FULL | Qwen2.5-7B | 1.000 | 0.966 | −0.034 | 0.00 → 0.00 |
+| Hermes-3 FULL | Gemma-27B | 0.585 | 0.676 | **+0.091** | 0.02 → 0.02 |
+| probe FULL | Qwen3-8B | 0.949 | 0.942 | −0.007 | 0.23 → **0.11** |
+| probe FULL | Qwen2.5-7B | 0.946 | 0.925 | −0.022 | 0.20 → **0.11** |
+| probe FULL | Gemma-27B | 0.940 | 0.942 | +0.002 | 0.16 → **0.09** |
+| probe REST | Qwen3-8B | 1.000 | 0.967 | −0.033 | 0.17 → **0.04** |
+| probe REST | Qwen2.5-7B | 1.000 | 0.948 | −0.052 | 0.15 → **0.07** |
+| probe REST | Gemma-27B | 1.000 | 1.000 | +0.000 | 0.13 → **0.07** |
 
-Ticket context removes most of the honest false positives (FPR@.5 drops 30–100%
-relatively across cells) at essentially unchanged AUROC (+0.007/+0.068 on the ablated
-lineages; −0.007/−0.033 on the probe). The roi_withhold tail persists — correctly: the
-"honest"-prompted Qwen-abl episodes in that scenario actually released records to partner
-stores (adjudicated by trajectory dump after the ROI-scorer fix), so a monitor that keeps
-them at 1.0 is detecting, not hallucinating.
+Two conclusions:
+
+1. **Authorisation context removes honest false positives at unchanged AUROC.** FPR@.5
+   falls in 13/15 cells (halved or better in 9), while AUROC moves within ±0.07. This
+   replicates across all three monitors, including the one whose lineage matches neither
+   policy lineage.
+2. **Authorisation context does NOT close the cross-lineage collapse.** Gemma-27B on the
+   Hermes-3 policy improves only 0.585 → 0.676 — still ~0.25 below its Qwen-lineage
+   level. The transfer failure is a generalization failure of the monitor, not an
+   information gap: the ticket context removes false positives on tasks it can already
+   judge, but does not teach it to recognize a foreign model's violation patterns.
+
+The roi_withhold tail persists — correctly: the "honest"-prompted Qwen-abl episodes in
+that scenario actually released records to partner stores (adjudicated by trajectory dump
+after the ROI-scorer fix), so a monitor that keeps them at 1.0 is detecting, not
+hallucinating.
 
 ## Integrity notes
 
