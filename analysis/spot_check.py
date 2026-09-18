@@ -81,7 +81,8 @@ def render(rec: dict, scores: dict | None, idx: int) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--phase", default="attack", choices=["honest", "attack", "probe"])
+    ap.add_argument("--phase", default="attack",
+                    choices=["honest", "attack", "probe", "selective"])
     ap.add_argument("--n", type=int, default=10)
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--monitor", default=None, help="monitor slug to join scores from")
