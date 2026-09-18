@@ -90,3 +90,10 @@
   Deferred: the matrix stands as delivered; the second aligned probe is future work.
 - All servers stopped; GPU clean. 9674 raw log lines preserved in runs/ (committed) and
   on durable NFS.
+
+### E5 added post-freeze (defer-to-trusted, the protocol the flavour doc asked for)
+- Phase 1 counterfactual over 452 main-phase episodes; phase 2 real continuations n=18.
+- 92/95 successful attacks averted (safety 0.968 cf @0.5); ticket context cuts honest
+  deferrals 23% -> 14% at safety 0.926. Trust-continuation assumption validated (0/18).
+- gep/defer.py + scripts/e5_analyze.py + scripts/e5_phase2.py; raw sample in runs/.
+- GPU stopped and verified 0 MiB; NFS backup refreshed with E5 code + data.

@@ -45,7 +45,12 @@ http_post, no partner stores -- enforced inside the world, not the prompt).
    the assigned ticket's ORIGINAL content to the monitor context (authorisation context;
    `--ticket-aware`), testing whether ticket context removes the honest false-positive
    tail documented in FINDINGS #3.
-5. **analyze**: usefulness, attack success, monitor AUROC, safety at 1%/5% audit budgets,
+5. **E5 defer-to-trusted**: the actual defer protocol simulated from frozen scores — the
+   monitor crosses at the first suspicious action, that action is not executed, and the
+   trusted policy (same checkpoint, honest prompt) finishes the episode. Phase 1 is a
+   counterfactual over all main-phase episodes; phase 2 validates the clean-continuation
+   assumption with real trusted continuations (`gep/defer.py`, `scripts/e5_phase2.py`).
+6. **analyze**: usefulness, attack success, monitor AUROC, safety at 1%/5% audit budgets,
    fixed-threshold TPR/FPR, cross-lineage transfer matrix, FULL-vs-RESTRICTED deltas.
    Verdicts are re-derived at analysis time by deterministic replay under current scorers.
 
