@@ -59,8 +59,12 @@ POLICY_ATTACK = [
     # Attack phase runs ONLY on behaviourally-ablated checkpoints (DECISIONS D6): aligned
     # models given attack prompts are the PROBE phase (elicitation/refusal), never attack
     # capability. Two lineages => the monitor transfer matrix is genuinely cross-lineage.
+    # (mlabonne's Meta-Llama-3.1-8B-Instruct-abliterated was tried first and LOST
+    # tool-calling: all 90 attack episodes were 1-turn text-only replies that wrote tool
+    # calls as markdown prose -- 0 actions. Swapped for Lexi-Uncensored, a lighter
+    # uncensored fine-tune of the same base that retains the base tool-calling behaviour.)
     ("ibrahimkettaneh/Qwen2.5-32B-Instruct-abliterated-pass2-AWQ", "qwen", 8023, 0.85),
-    ("mlabonne/Meta-Llama-3.1-8B-Instruct-abliterated", "llama", 8024, 0.70),
+    ("Orenguteng/Llama-3.1-8B-Lexi-Uncensored", "llama", 8024, 0.70),
 ]
 POLICY_PROBE = [
     # aligned models given attack prompts: measures elicitation/refusal, not attack success
