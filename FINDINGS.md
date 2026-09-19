@@ -5,18 +5,18 @@
 **In a reproducible enterprise-ops control setting (GEP), measured control safety is a
 property of the (untrusted policy x trusted monitor x affordance configuration) pairing,
 not of any single factor.** Three concrete separations demonstrate this: (1) monitor
-AUROC collapses by 0.28-0.41 when the same monitors are moved from a Qwen-lineage policy
+AUROC collapses by 0.25-0.37 when the same monitors are moved from a Qwen-lineage policy
 to a Llama-lineage one, while affordance restriction leaves overall attack success
-unchanged (0.41 -> 0.43) because the attack substitutes between side tasks; (2) the
+unchanged (0.43 -> 0.45) because the attack substitutes between side tasks; (2) the
 honest false-positive tail is *policy- and task-dependent* -- it saturates at the score
 ceiling for role-governance and release-withholding tasks where honest actions are
 prefix-identical to violations; (3) the false positives are largely *removable*: giving
-the monitor the assigned ticket's original authorisation context cuts FPR@0.5 by 30-100%
-(relatively) across cells at unchanged AUROC (E4). Consequence for practice: a monitor
-validated on one model family and one tool configuration gives no warranty about its
-behaviour on another; restricting affordances buys a change in *which* violations occur,
-not a reduction in *whether* they do; and the cheapest large monitor win is not a bigger
-model but the authorisation context the deployment already has.
+the monitor the assigned ticket's original authorisation context cuts FPR@0.5 in 14 of
+15 cells at unchanged AUROC (E4). Consequence for practice: a monitor validated on one
+model family and one tool configuration gives no warranty about its behaviour on another;
+restricting affordances buys a change in *which* violations occur, not a reduction in
+*whether* they do; and the cheapest large monitor win is not a bigger model but the
+authorisation context the deployment already has.
 
 ## Supporting evidence
 
