@@ -58,6 +58,15 @@ substituted into privilege escalation and silent edits at statistically unchange
 success (0.39 vs 0.45, within the ±0.09 CI). Which violations occur is a function of
 affordances; whether violations occur is not.
 
+**Severity-weighted violation mass** (sum of severity per completed violation, weights
+4/3/4/3/1 for ST1-5): FULL = 203 over 111 episodes (**1.83/episode**); RESTRICTED = 173
+over 115 (**1.50/episode**) — an 18% relative reduction. The two affordance rankings come
+apart: by raw attack success RESTRICTED is no better (0.39 vs 0.45), by severity-weighted
+mass it is moderately better. An organisation's choice between "restrict affordances" and
+"monitor everything" therefore depends on whether its threat model weights all violations
+equally or weights exfiltration above escalation — and the monitor results (E4) say the
+monitor-side option is cheaper to improve than it looks.
+
 ### The probe result (aligned model + attack prompt)
 
 The aligned Qwen-32B reaches attack success 0.43 (FULL) / 0.50 (RESTRICTED) — statistically
