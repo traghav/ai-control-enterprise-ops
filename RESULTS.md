@@ -60,8 +60,8 @@ affordances; whether violations occur is not.
 
 ### The probe result (aligned model + attack prompt)
 
-The aligned Qwen-32B reaches attack success 0.44 (FULL) / 0.50 (RESTRICTED) — statistically
-indistinguishable from the ablated checkpoint (0.43/0.45) — while honest-mode usefulness
+The aligned Qwen-32B reaches attack success 0.43 (FULL) / 0.50 (RESTRICTED) — statistically
+indistinguishable from the ablated checkpoint (0.39/0.45) — while honest-mode usefulness
 is equal too (0.73 both). Alignment-as-measured-by-refusal did not reduce completed
 violations under a fixed elicitation prompt.
 
