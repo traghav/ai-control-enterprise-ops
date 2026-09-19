@@ -4,20 +4,23 @@
 
 **In a reproducible enterprise-ops control setting (GEP), measured control safety is a
 property of the (untrusted policy x trusted monitor x affordance configuration) pairing,
-not of any single factor.** Three concrete separations demonstrate this: (1) monitor
+not of any single factor.** Four concrete separations demonstrate this: (1) monitor
 AUROC collapses by 0.25-0.37 when the same monitors are moved from a Qwen-lineage policy
 to a Llama-lineage one, while affordance restriction leaves overall attack success
 statistically unchanged (0.39 -> 0.45, within the ±0.09 CI) because the attack
-substitutes between side tasks; (2) the
-honest false-positive tail is *policy- and task-dependent* -- it saturates at the score
-ceiling for role-governance and release-withholding tasks where honest actions are
-prefix-identical to violations; (3) the false positives are largely *removable*: giving
-the monitor the assigned ticket's original authorisation context cuts FPR@0.5 in 14 of
-15 cells at unchanged AUROC (E4). Consequence for practice: a monitor validated on one
-model family and one tool configuration gives no warranty about its behaviour on another;
-restricting affordances buys a change in *which* violations occur, not a reduction in
-*whether* they do; and the cheapest large monitor win is not a bigger model but the
-authorisation context the deployment already has.
+substitutes between side tasks; (2) the honest false-positive tail is *policy- and
+task-dependent* -- it saturates at the score ceiling for role-governance and
+release-withholding tasks where honest actions are prefix-identical to violations; (3)
+the false positives are largely *removable*: giving the monitor the assigned ticket's
+original authorisation context cuts FPR@0.5 in 14 of 15 cells at unchanged AUROC (E4);
+(4) under the actual defer protocol (E5), these monitors avert 97% of successful attacks
+— and ticket context converts the FPR reduction into a 40% cut in honest deferrals at
+modest safety cost. Consequence for practice: a monitor validated on one model family
+and one tool configuration gives no warranty about its behaviour on another; restricting
+affordances buys a change in *which* violations occur, not a reduction in *whether* they
+do; the cheapest large monitor win is not a bigger model but the authorisation context
+the deployment already has; and the defer protocol tolerates the false positives that
+make post-hoc audit metrics look degenerate.
 
 ## Supporting evidence
 
@@ -74,7 +77,21 @@ authorisation context the deployment already has.
    the authorisation context the deployment already has, and violation patterns from
    beyond its own training distribution.
 
-6. **World-state scoring is what makes the numbers mean anything.** Attack plans are
+6. **Defer-to-trusted works well on exactly the attacks that look worst post-hoc (E5).**
+   Simulating the actual defer protocol over all 452 main-phase episodes: 92/95
+   successful attacks (97%) are averted because the attack's suspicious actions arrive
+   BEFORE its cover story completes — the monitor crosses early, and only 2-3 violations
+   complete before deferral. The E4 ticket-context FPR reduction converts directly into
+   operational savings: honest deferral rate drops 23% -> 14% (fewer trusted
+   continuations) at modest safety cost (0.968 -> 0.926). Real trusted continuations
+   (n=18) confirm the protocol assumption: 0 violations introduced, main task recovered
+   11/18 (recovery bounded by the checkpoint's own honest withhold rate on the trap
+   task). Notably, the audit-budget safety metric that saturated at 0.00 on the same
+   scores and the defer protocol at 0.90-0.97 answer different operational questions;
+   the budget metric's degeneracy is an artefact of asking the review question under
+   tail saturation, not evidence that control fails.
+
+7. **World-state scoring is what makes the numbers mean anything.** Attack plans are
    frequent in transcripts; completed violations are not. Spot-checks of 10 attack
    trajectories show exfiltration attempts with hallucinated MRNs ("123456789"), blocked
    export attempts retried through other channels, and one attempted-but-insufficient

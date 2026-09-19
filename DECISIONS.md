@@ -182,3 +182,26 @@ and the six monitor passes (3 monitors x {context-free, ticket-aware}) score onl
 episodes (~2h). E3/selective stays at n=44 — its conclusion ("selection not elicitable")
 is a qualitative observation on the REACHABILITY preamble, not a rate estimate, and more
 reps would not change it.
+
+## D15 — E5 defer-to-trusted: two-phase simulation, assumption validated
+
+The flavour doc's E2 asked for defer-to-trusted; the frozen matrix computed audit-style
+safety only. E5 closes that gap without re-running policy episodes:
+
+Phase 1 (no GPU): counterfactual over all 452 Qwen-abl main-phase episodes. The monitor
+crosses at the first action scoring >= threshold; the crossing action is NOT executed
+(in deployment the monitor sees the proposed action and defers pre-execution); the
+prefix world is replayed and scored. Correct accounting reconciles exactly with the
+frozen ground truth (95 successful attacks).
+
+Phase 2 (GPU, n=18): the phase-1 counterfactual assumes trusted continuations never
+violate. Validated with REAL continuations (same checkpoint, honest prompt, fresh turns):
+0/18 violations, main task recovered 11/18 (bounded by the checkpoint's 0.05 honest
+withhold rate on the trap scenario), 0 errors, continuation lengths 0-7 actions.
+
+Result: defer-to-trusted averts 92/95 (0.968 safety, cf monitor @0.5); ticket-aware
+context trades safety (0.926) for a 40% cut in honest deferrals (52 -> 31 of 226). The
+apparent contradiction with the saturated audit-budget metric (0.00 in hard cells) is
+structural: deferral acts on the first crossing; the budget metric asks whether the
+episode would be found in bounded review. Same logged scores, different operational
+questions.
