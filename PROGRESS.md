@@ -71,3 +71,9 @@
 ### Status
 - ALL WORK COMPLETE as of 02:12 (power expansion) / write-up frozen after review.
 - Repo pushed to github.com/traghav/ai-control-enterprise-ops (master).
+
+### Durability
+- All raw runs (episodes, monitor scores, analysis, figures) + full code base backed up
+  to the durable NFS mount: /lambda/nfs/autocontrol/backup_20260919/ (verified sizes).
+  The GitHub repo carries the analysis artifacts; the NFS copy additionally preserves
+  every raw JSONL episode and score log.
