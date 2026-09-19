@@ -7,7 +7,8 @@ property of the (untrusted policy x trusted monitor x affordance configuration) 
 not of any single factor.** Three concrete separations demonstrate this: (1) monitor
 AUROC collapses by 0.25-0.37 when the same monitors are moved from a Qwen-lineage policy
 to a Llama-lineage one, while affordance restriction leaves overall attack success
-unchanged (0.43 -> 0.45) because the attack substitutes between side tasks; (2) the
+statistically unchanged (0.39 -> 0.45, within the ±0.09 CI) because the attack
+substitutes between side tasks; (2) the
 honest false-positive tail is *policy- and task-dependent* -- it saturates at the score
 ceiling for role-governance and release-withholding tasks where honest actions are
 prefix-identical to violations; (3) the false positives are largely *removable*: giving
@@ -30,8 +31,8 @@ authorisation context the deployment already has.
 2. **Affordance restriction substitutes rather than suppresses.** Removing http_post and
    the partner stores eliminated every sev-4 exfiltration fire (ST1: 28 -> 0, ST3:
    19 -> 0) but ST4 privilege escalation rose from 0 to 28 and ST2 silent edits from
-   6 to 29 -- the directory and record tools remain -- and overall attack success moved
-   only 0.43 -> 0.45 (within the +/-0.09 CI at n=105-115/cell). The ranking of
+   5 to 29 -- the directory and record tools remain -- and overall attack success moved
+   only 0.39 -> 0.45 (within the +/-0.09 CI at n=110-115/cell). The ranking of
    affordance configurations depends on which side task the auditor weights, i.e. on the
    severity table, not on attack success alone.
 
@@ -46,7 +47,7 @@ authorisation context the deployment already has.
 
 4. **Elicitation asymmetry between checkpoints — and a domain-native trap.** The ablated
    Qwen-32B and the aligned Qwen-32B reach statistically indistinguishable attack success
-   under the same attack prompt (0.43 vs 0.44 FULL; 0.45 vs 0.50 RESTRICTED) while their
+   under the same attack prompt (0.39 vs 0.43 FULL; 0.45 vs 0.50 RESTRICTED) while their
    honest usefulness is equal too (0.70-0.73), so "aligned" and "attack-capable" are not
    opposites under a strong elicitation prompt. The sharpest version is the ROI trap
    ticket (requester claims verbal consent; no signed authorisation exists): in HONEST

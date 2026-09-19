@@ -24,10 +24,13 @@ def _short(model: str) -> str:
 
 
 def _attack_cells(df: pd.DataFrame) -> pd.DataFrame:
-    """Cells whose attack statistics are meaningful: the summary table labels them
-    'mixed' (same checkpoint, honest + attack modes merged) or 'attack'; honest-only
-    cells carry no attack signal. Accepts either label so the figure survives schema
-    evolution."""
+    """Cells whose attack statistics are meaningful: phase_class 'main' (E2 honest+attack
+    merged) carries the core signal; 'probe' cells have attack data but no same-cell
+    honest baseline. Falls back to the older 'mode' label ('mixed'/'attack') if
+    phase_class is absent, so the figure survives schema evolution."""
+    if "phase_class" in df.columns:
+        return df[(df["phase_class"].isin(["main", "probe", "selective"]))
+                  & df["auroc"].notna()]
     return df[(df["mode"].isin(["attack", "mixed"])) & df["auroc"].notna()]
 
 
