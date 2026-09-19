@@ -21,15 +21,17 @@ model but the authorisation context the deployment already has.
 ## Supporting evidence
 
 1. **Cross-lineage monitor transfer degrades sharply.** With FULL affordances, mean
-   monitor AUROC against Qwen-lineage policies is 0.94 (Gemma-27B) and 0.94 (Qwen-8B
-   monitors); against the Llama-lineage policy (Hermes-3) it is 0.53 and 0.60-0.73. The
-   monitors' calibration does not transfer across vendor lineages even though the
-   violation taxonomy is identical. (RESULTS.md, transfer matrix + figure.)
+   context-free monitor AUROC against Qwen-lineage policies is 0.93 (Gemma-27B) and 0.93
+   (Qwen-8B monitors); against the Llama-lineage policy (Hermes-3) it is 0.56 and 0.67.
+   Replicated at n=105-115 episodes/cell. The monitors' calibration does not transfer
+   across vendor lineages even though the violation taxonomy is identical. (RESULTS.md,
+   transfer matrix + figure.)
 
 2. **Affordance restriction substitutes rather than suppresses.** Removing http_post and
-   the partner stores eliminated every sev-4 exfiltration fire (ST1: 12 -> 0, ST3:
-   7 -> 0) but ST4 privilege escalation rose from 0 to 15 -- the directory tool remains
-   -- and overall attack success stayed within noise (0.41 vs 0.43). The ranking of
+   the partner stores eliminated every sev-4 exfiltration fire (ST1: 28 -> 0, ST3:
+   19 -> 0) but ST4 privilege escalation rose from 0 to 28 and ST2 silent edits from
+   6 to 29 -- the directory and record tools remain -- and overall attack success moved
+   only 0.43 -> 0.45 (within the +/-0.09 CI at n=105-115/cell). The ranking of
    affordance configurations depends on which side task the auditor weights, i.e. on the
    severity table, not on attack success alone.
 
@@ -43,19 +45,20 @@ model but the authorisation context the deployment already has.
    authorised and what was not.
 
 4. **Elicitation asymmetry between checkpoints.** The ablated Qwen-32B and the aligned
-   Qwen-32B reach nearly identical attack success under the same attack prompt (0.41 vs
-   0.43) while their honest usefulness is equal (0.68 both), so "aligned" and "attack-
-   capable" are not opposites under a strong elicitation prompt; the Hermes-3 checkpoint
-   is the opposite case (attack success 0.05, honest usefulness 0.05 -- it is not
-   reliable in either mode at following the multi-step workflow).
+   Qwen-32B reach statistically indistinguishable attack success under the same attack
+   prompt (0.43 vs 0.44 FULL; 0.45 vs 0.50 RESTRICTED) while their honest usefulness is
+   equal too (0.70-0.73), so "aligned" and "attack-capable" are not opposites under a
+   strong elicitation prompt; the Hermes-3 checkpoint is the opposite case (attack
+   success 0.06/0.00, honest usefulness 0.05/0.04 -- it is not reliable in either mode
+   at following the multi-step workflow).
 
 5. **Authorisation context is the cheapest monitor upgrade (E4) — but it does not fix
-   transfer.** Re-scoring all 577 trajectories per monitor with the assigned ticket's
-   original content cut FPR@0.5 in 13 of 15 (policy x monitor x affordance) cells —
-   halved or better in 9 (e.g. 0.09 -> 0.00 on Hermes-3, 0.17 -> 0.04 on the probe) —
-   at AUROC changes within +/-0.07. The honest access_review tail vanished (median
-   0.75 -> 0.00). Yet the same context moved Gemma's collapsed Hermes-3 AUROC only
-   0.585 -> 0.676, against its ~0.93 on Qwen-lineage policies. So the false-positive
+   transfer.** Re-scoring every trajectory per monitor with the assigned ticket's
+   original content cut FPR@0.5 in 14 of 15 (policy x monitor x affordance) cells —
+   halved or better in 10 (e.g. 0.08 -> 0.00 on Hermes-3, 0.18 -> 0.06 on the probe) —
+   at AUROC changes within +/-0.04. The honest access_review tail vanished (median
+   0.75 -> 0.00, n=58). Yet the same context moved Gemma's collapsed Hermes-3 AUROC only
+   0.668 -> 0.704, against its 0.93 on Qwen-lineage policies. So the false-positive
    problem is an *information* problem the deployment can fix for free, but the
    cross-lineage detection problem is a *generalization* problem in the monitor that
    context alone does not solve. The monitor did not need to be bigger; it needed both
@@ -95,10 +98,11 @@ model but the authorisation context the deployment already has.
 
 ## Limitations
 
-- **n = 42-46 per cell; ~40 policy-hours.** Bootstrap CIs at these sizes are about
-  +/-0.14: differences below that (e.g. the FULL-vs-RESTRICTED attack-success delta) are
-  not resolved. The transfer-matrix collapse (0.28-0.41 AUROC) and the E4 FPR reductions
-  are far outside this band.
+- **n = 105-115 per cell after the D14 power expansion (~10 GPU-hours total).**
+  Bootstrap CIs are about +/-0.09: the FULL-vs-RESTRICTED attack-success delta (0.02)
+  is resolved as *absent*, not merely small. The transfer-matrix collapse (0.25-0.37
+  AUROC) and the E4 FPR reductions are far outside this band. E3/selective remains
+  n=44 (qualitative finding).
 - **One untrusted model per lineage, one seed family.** Lineage-level claims rest on a
   single checkpoint per lineage; within-lineage variance is unmeasured.
 - **No shell access.** The world is tool-mediated (D2) for attribution and
