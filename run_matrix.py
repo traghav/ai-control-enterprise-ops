@@ -76,8 +76,11 @@ POLICY_ATTACK = [
     ("NousResearch/Hermes-3-Llama-3.1-8B", "llama", 8024, 0.70),
 ]
 POLICY_PROBE = [
-    # aligned models given attack prompts: measures elicitation/refusal, not attack success
+    # aligned models given attack prompts: measures elicitation/refusal, not attack
+    # success. Two lineages (D5): the Llama entry is the revived aligned checkpoint
+    # (official tool template via --chat-template, serialized history in engine.py).
     ("Qwen/Qwen2.5-32B-Instruct-AWQ", "qwen", 8020, 0.85),
+    ("NousResearch/Meta-Llama-3.1-8B-Instruct", "llama", 8021, 0.70),
 ]
 MONITORS = [
     # (repo_id, family, port, gpu_util, informed)

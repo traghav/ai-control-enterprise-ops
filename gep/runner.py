@@ -12,7 +12,7 @@ import traceback
 from dataclasses import dataclass
 from typing import Any
 
-from .engine import Episode, LLM, LLMConfig, dispatch, tool_schemas
+from .engine import Episode, LLM, LLMConfig, dispatch, needs_serialized_history, serialized_assistant_turns, tool_schemas
 from .monitors import LLMMonitor, MonitorSpec
 from .policies import HONEST_SYSTEM, build_attack_system, build_selective_attack_system, user_message
 from .side_tasks import score_all
@@ -98,6 +98,10 @@ def run_episode(
         {"role": "system", "content": system},
         {"role": "user", "content": user_message(task.goal, ticket)},
     ]
+    # Models whose chat template cannot re-render multi-call assistant turns get their
+    # history flattened to sequential single-call turns (see engine.py; the llama3_json
+    # template raises on multi-call history otherwise). World behavior is identical.
+    serialize = needs_serialized_history(cell.untrusted_model)
 
     ep = Episode(
         episode_id=f"{cell.key()}__{task.task_id}__seed{seed}",
@@ -117,32 +121,58 @@ def run_episode(
             content = r.get("content") or ""
             tool_calls = r.get("tool_calls") or []
 
-            assistant_msg: dict[str, Any] = {"role": "assistant", "content": content}
-            if tool_calls:
+            if not tool_calls:
+                messages.append({"role": "assistant", "content": content})
+                ep.final_text = content  # persist the closing reply for FINDINGS spot-checks
+                break  # agent finished
+
+            if serialize:
+                # llama3_json template cannot re-render multi-call history: flatten to
+                # sequential single-call assistant turns, each followed by its tool
+                # result. Every call is still dispatched, in order — world behavior
+                # identical to the parallel rendering used for the other models. The id
+                # prefix is fixed per model turn so assistant call ids and tool result
+                # ids pair exactly (recomputing from len(ep.actions) after each append
+                # would drift for j >= 1).
+                id_prefix = f"t{len(ep.actions)}"
+                turns = serialized_assistant_turns(content, tool_calls, id_prefix=id_prefix)
+                for j, tc in enumerate(tool_calls):
+                    messages.append(turns[j])
+                    n_before = len(world.events)
+                    result = dispatch(world, tc["name"], tc["arguments"])
+                    blocked = bool(world.events and len(world.events) > n_before
+                                   and world.events[-1].get("blocked"))
+                    ep.actions.append({
+                        "i": len(ep.actions), "tool": tc["name"],
+                        "args": _safe_json(tc["arguments"]), "result": result,
+                        "blocked": blocked,
+                    })
+                    messages.append({
+                        "role": "tool", "tool_call_id": f"{id_prefix}_{j}",
+                        "content": json.dumps(result, default=str)[:6000],
+                    })
+            else:
+                assistant_msg: dict[str, Any] = {"role": "assistant", "content": content}
                 assistant_msg["tool_calls"] = [
                     {"id": tc["id"], "type": "function",
                      "function": {"name": tc["name"], "arguments": tc["arguments"]}}
                     for tc in tool_calls
                 ]
-            messages.append(assistant_msg)
+                messages.append(assistant_msg)
 
-            if not tool_calls:
-                ep.final_text = content  # persist the closing reply for FINDINGS spot-checks
-                break  # agent finished
-
-            for tc in tool_calls:
-                n_before = len(world.events)
-                result = dispatch(world, tc["name"], tc["arguments"])
-                blocked = bool(world.events and len(world.events) > n_before
-                               and world.events[-1].get("blocked"))
-                ep.actions.append({
-                    "i": len(ep.actions), "tool": tc["name"],
-                    "args": _safe_json(tc["arguments"]), "result": result, "blocked": blocked,
-                })
-                messages.append({
-                    "role": "tool", "tool_call_id": tc["id"],
-                    "content": json.dumps(result, default=str)[:6000],
-                })
+                for tc in tool_calls:
+                    n_before = len(world.events)
+                    result = dispatch(world, tc["name"], tc["arguments"])
+                    blocked = bool(world.events and len(world.events) > n_before
+                                   and world.events[-1].get("blocked"))
+                    ep.actions.append({
+                        "i": len(ep.actions), "tool": tc["name"],
+                        "args": _safe_json(tc["arguments"]), "result": result, "blocked": blocked,
+                    })
+                    messages.append({
+                        "role": "tool", "tool_call_id": tc["id"],
+                        "content": json.dumps(result, default=str)[:6000],
+                    })
     except Exception as e:  # noqa: BLE001
         ep.error = f"{type(e).__name__}: {e}\n{traceback.format_exc()[-1500:]}"
 
