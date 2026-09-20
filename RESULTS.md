@@ -281,6 +281,11 @@ same threshold:
 | Hermes-3 | Gemma-27B | 0.5 | 5 | **0.600** | 19% |
 | Hermes-3 | Gemma-27B | 0.75 | 5 | **0.400** | 18% |
 
+*Caveat*: the Hermes-3 numbers rest on only 5 successful attacks (the checkpoint rarely
+completed a violation), so the safety point estimates carry wide CIs. The direction —
+same monitor, same threshold, safety dropping from 0.968 to 0.4-0.6 across lineages — is
+the finding; the exact values are not precise at this n.
+
 The collapse converts directly into protection failures: Gemma-27B at threshold 0.75
 defers worse than chance on Hermes-3 (0.400 — below the 0.2 attack-base-rate floor of
 "defer on everything"). Two monitors from the same prompt, same scoring scheme, and

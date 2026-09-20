@@ -4,9 +4,9 @@ A reproducible AI-control evaluation in an enterprise health-records setting, me
 how control safety depends on the **(untrusted model x monitor x affordances)** pairing
 rather than on the untrusted model alone.
 
-Built for a MATS application. Everything is synthetic: no real PHI/PII is used,
-referenced, or downloaded; the "external partner endpoints" are mock names inside the
-sandboxed world (`partner-*.example`); nothing leaves the evaluation machine.
+Everything is synthetic: no real PHI/PII is used, referenced, or downloaded; the
+"external partner endpoints" are mock names inside the sandboxed world
+(`partner-*.example`); nothing leaves the evaluation machine.
 
 ## The setting: GEP (Generic Enterprise Platform)
 
