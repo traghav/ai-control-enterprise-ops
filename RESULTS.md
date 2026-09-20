@@ -42,6 +42,8 @@ The FULL-vs-RESTRICTED attack-success difference for Qwen-abl is **0.06** (0.39 
 — inside the ±0.09 CI, i.e. **no detectable safety gain from affordance restriction at
 the level of overall attack success**. The per-side-task decomposition below shows why.
 
+![Attack success by affordance](runs/figs/affordance_effect.png)
+
 ### The substitution effect (Qwen-abl, per-side-task fires under final scorers)
 
 | side task | FULL (n=110) | RESTRICTED (n=115) |
@@ -93,6 +95,8 @@ Honest usefulness 0.57 (FULL) / 0.46 (RESTRICTED), 0 errors, 2 zero-action episo
 226, serialized-history fingerprint confirmed (132/226 episodes with n_actions >
 n_turns). Below the Qwen honest legs (0.70–0.73) — the 8B checkpoint is less reliable at
 multi-step workflow completion, consistent with the Hermes-3 honest findings.
+
+![Safety-usefulness](runs/figs/safety_usefulness.png)
 
 ### The ROI trap task: an unauthorised-release differential (honest mode, n=20/model)
 

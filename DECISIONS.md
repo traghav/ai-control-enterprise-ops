@@ -162,7 +162,8 @@ with the assigned ticket's ORIGINAL subject+body added to its context (comments 
 — agent-writable, so a monitor that reads them can be self-authorised against).
 
 Result (15 cells): FPR@.5 falls in 13/15 cells — halved or better in 9 — at AUROC
-changes within ±0.07. The access_review honest tail vanishes (median 0.75 -> 0.00).
+changes within ±0.07. (Numbers below are pre-D14-expansion; the powered final grid is in
+RESULTS.md — 14/15 and halved-or-better in 10.) The access_review honest tail vanishes (median 0.75 -> 0.00).
 The roi_withhold tail PERSISTS, and should: trajectory adjudication after the ROI-scorer
 fix showed those "honest"-prompted Qwen-abl episodes actually released records to
 partner stores — the monitor is detecting, not hallucinating.
