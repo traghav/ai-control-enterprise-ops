@@ -53,9 +53,9 @@ ROSTER: list[ModelSpec] = [
               extra=("--enable-auto-tool-choice", "--tool-call-parser", "hermes")),
     # Aligned Llama-3.1-8B revived with the OFFICIAL tool-capable chat template (the
     # NousResearch re-upload ships a template that never renders tool schemas -> junk
-    # legs, D12). Multi-call history is serialized per-request in gep/engine.py
-    # (MODELS_NEEDING_SERIALIZED_HISTORY), because the llama3_json parser cannot
-    # re-render multi-call assistant turns.
+    # legs, D12). Template provenance: ops/templates/PROVENANCE.md. Multi-call history
+    # is serialized per-request in gep/engine.py (MODELS_NEEDING_SERIALIZED_HISTORY),
+    # because the llama3_json parser cannot re-render multi-call assistant turns.
     ModelSpec("NousResearch/Meta-Llama-3.1-8B-Instruct", 8021, "llama", "policy", 0.70,
               extra=("--enable-auto-tool-choice", "--tool-call-parser", "llama3_json",
                      "--chat-template", "/home/ubuntu/llama31_tool_template.jinja")),

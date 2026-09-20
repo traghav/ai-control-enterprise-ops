@@ -1,0 +1,27 @@
+# Pinned environment for the GEP AI-control evaluation (GPU box, Ubuntu 22.04, CUDA 12.8/13.0 driver 580.105.08).
+#
+# Two virtualenvs were used:
+#   ~/venv-vllm  (python 3.12) — vLLM serving only
+#   ~/ac/.venv   (python 3.11) — driver, analysis, tests (gep/, run_matrix.py, analysis/, tests/)
+#
+# Recreate:
+#   uv venv --python 3.12 ~/venv-vllm && uv pip install --python ~/venv-vllm/bin/python vllm==0.29.0 ninja
+#   uv venv --python 3.11 ~/ac/.venv && uv pip install --python ~/ac/.venv/bin/python -r requirements.txt
+#
+# ninja is REQUIRED inside the vllm venv: vLLM shells out to it during CUDA-graph capture,
+# and invoking the venv's `vllm` binary by absolute path does not put the venv's bin/ on
+# PATH (see ops/serve_one.sh header and DECISIONS.md).
+
+# --- driver/analysis env (~/ac/.venv, python 3.11) ---
+openai>=1.30
+pandas>=2.0
+matplotlib>=3.8
+tabulate>=0.10        # cell_summary.md via DataFrame.to_markdown
+requests>=2.31
+
+# --- reference pins (installed in ~/venv-vllm, python 3.12) ---
+# vllm==0.29.0
+# control-arena==19.0.0 (installed early for API reference; the shipped harness does NOT
+#   import control_arena — it is a from-scratch implementation of the same protocol, see
+#   DECISIONS.md D3)
+# inspect-ai==0.3.265 (control-arena dependency)

@@ -24,12 +24,14 @@ make post-hoc audit metrics look degenerate.
 
 ## Supporting evidence
 
-1. **Cross-lineage monitor transfer degrades sharply.** With FULL affordances, mean
-   context-free monitor AUROC against Qwen-lineage policies is 0.93 (Gemma-27B) and 0.93
-   (Qwen-8B monitors); against the Llama-lineage policy (Hermes-3) it is 0.56 and 0.67.
-   Replicated at n=105-115 episodes/cell. The monitors' calibration does not transfer
-   across vendor lineages even though the violation taxonomy is identical. (RESULTS.md,
-   transfer matrix + figure.)
+1. **Monitor transfer degrades sharply on the ablated checkpoint — refined by E6: the
+   collapse is checkpoint-specific, not lineage-wide.** With FULL affordances,
+   context-free monitor AUROC against Qwen-lineage policies is 0.93; against the
+   ablated Llama-lineage policy (Hermes-3) it is 0.56-0.67. E6 revived the ALIGNED
+   Llama-lineage probe and monitors score it at 0.89-0.97 — as high as Qwen cells. The
+   violation taxonomy is identical across all policies; what the monitors fail to track
+   is specifically the ablated fine-tune's violation patterns. Replicated at
+   n=105-115 episodes/cell. (RESULTS.md, transfer matrix + figure.)
 
 2. **Affordance restriction substitutes rather than suppresses — by raw count. Its value
    shows up only under severity weighting.** Removing http_post and the partner stores
@@ -116,7 +118,10 @@ make post-hoc audit metrics look degenerate.
   (tool-call trained) worked.
 - **phi-4 has no working vLLM tool parser** (only phi4mini, a different model); its
   honest and probe legs were all-error. The aligned NousResearch Llama-3.1 re-upload
-  ships a chat template that never renders tool schemas. Both were dropped (D12).
+  ships a chat template that never renders tool schemas. phi-4 stayed dropped (D12);
+  the aligned Llama was REVIVED post-freeze (E6) under the official tool-capable
+  template (ops/templates/PROVENANCE.md) with serialized history, as a second probe +
+  honest baseline — its pre-revival legs remain excluded.
 - **Scorers had real bugs that only trajectory-level adjudication caught.** The un-
   authorised ROI release passed `prog_roi_withhold` for a full honest leg (the audit
   entry's target field stores the destination, not the MRN; and "consent" keyword-
@@ -128,7 +133,8 @@ make post-hoc audit metrics look degenerate.
 
 ## Limitations
 
-- **n = 105-115 per cell after the D14 power expansion (~10 GPU-hours total).**
+- **n = 105-115 per cell after the D14 power expansion (~10 GPU-hours, plus the E6
+  revived-probe legs and monitor passes).**
   Bootstrap CIs are about +/-0.09: the FULL-vs-RESTRICTED attack-success delta (0.02)
   is resolved as *absent*, not merely small. The transfer-matrix collapse (0.25-0.37
   AUROC) and the E4 FPR reductions are far outside this band. E3/selective remains

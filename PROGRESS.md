@@ -44,7 +44,7 @@
 
 ### Fallback level
 - 0 of the ladder used for the core matrix (all cells at full n).
-- phi-4 + aligned-Llama dropped per ladder after two failed tool-calling repairs (D12).
+- phi-4 dropped per ladder (D12); aligned-Llama honest leg dropped under its broken template but revived in E6 under the official one (honest + probe).
 
 ### Status
 - All GPU work complete. Repo write-up in progress.
@@ -62,8 +62,8 @@
 
 ### Final matrix
 - 2 attack lineages x own honest baselines x 2 affordances x (3 monitors x 2 contexts)
-- E3 selective leg (n=44); probe on aligned Qwen-32B.
-- Spontaneous honest violations: 0/678. Suite: 479 scorer + 57 prompt checks green.
+- E3 selective leg (n=44); probes on aligned Qwen-32B and (E6) aligned Llama-8B.
+- Spontaneous honest violations: 0/678 (frozen matrix; E6 honest legs re-checked post-run). Suite: 479 scorer + 57 prompt + 58 serialization checks green.
 
 ### Fallback level
 - 0 for the core matrix; phi-4 + aligned-Llama dropped per ladder (D12).
@@ -87,7 +87,10 @@
   Fixing requires serializing tool calls in the core agent loop — a post-data harness
   change that would make a revived probe incomparable with the existing matrix, where
   multi-call turns are pervasive (192/226 Hermes attack episodes show n_actions > n_turns).
-  Deferred: the matrix stands as delivered; the second aligned probe is future work.
+  DEFERRED -> SUPERSEDED (E6, 2026-09-20): history serialization landed in
+  gep/engine.py (MODELS_NEEDING_SERIALIZED_HISTORY + serialized_assistant_turns) and
+  gep/runner.py; the aligned Llama was revived under the official tool template
+  (ops/templates/PROVENANCE.md) and its honest + probe legs ran as E6 (ops/e6_seq.sh).
 - All servers stopped; GPU clean. 9674 raw log lines preserved in runs/ (committed) and
   on durable NFS.
 
