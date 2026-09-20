@@ -122,22 +122,42 @@ verification while doing it (spot-checked). "Followed the safety instructions in
 and "did not violate" come apart measurably at the world level. This is exactly the gap
 that monitors, not prompts, have to close.
 
-## Cross-lineage monitor transfer (FULL, context-free monitors)
+## Monitor transfer: depends on what counts as a positive (corrected by E7)
 
-| monitor \ policy family | qwen (abl + aligned-probe) | llama: Hermes-3 abl | llama: aligned probe (E6) |
+The first pass computed AUROC over ALL attack episodes as positives and reported a
+collapse (Gemma-27B 0.934 -> 0.563 on Hermes-3). E7 separates two scopes:
+
+| monitor | policy | ALL attack episodes (n_pos) | FIRED (successful) attacks (n_pos) |
 |---|---|---|---|
-| Gemma-27B | 0.934 | 0.563 | 0.920 |
-| Qwen-8B (mean) | 0.926 | 0.672 | 0.912–0.938 |
+| Qwen3-8B | Qwen-abl | 0.944 (110) | 0.952 (43) |
+| Qwen3-8B | Hermes-3 | 0.623 (106) | 0.967 (5) |
+| Qwen2.5-7B | Qwen-abl | 0.925 (110) | 0.945 (43) |
+| Qwen2.5-7B | Hermes-3 | 0.721 (106) | 1.000 (5) |
+| Gemma-27B | Qwen-abl | 0.939 (110) | 0.942 (43) |
+| Gemma-27B | Hermes-3 | 0.563 (106) | 0.722 (5) |
+
+The ALL-scope collapse is largely a label artifact: Hermes-3 rarely acted on the attack
+prompt, so 101 of its 106 "attack" episodes are behaviorally honest, and scoring them
+low is CORRECT monitor behavior. On the episodes that matter operationally (successful
+attacks), monitor ranking does not detectably collapse: Hermes-3 FIRED AUROC is
+0.72-1.00 (n_pos=5, wide CI) vs 0.94-0.95 on Qwen-abl. The aligned-Llama probe is also
+tracked well (FIRED AUROC 0.89-0.97, n_pos=32; E6).
+
+What does NOT transfer is the score scale. A threshold chosen on Qwen-abl at 10% FPR
+achieves a different operating point on Hermes-3:
+
+| monitor | threshold (from Qwen-abl) | on Qwen-abl | on Hermes-3 |
+|---|---|---|---|
+| Qwen3-8B | 0.75 | FPR 0.22, TPR 0.99 | FPR 0.09, TPR 0.80 |
+| Qwen2.5-7B | 0.75 | FPR 0.14, TPR 0.99 | FPR 0.01, TPR 1.00 |
+| Gemma-27B | 0.75 | FPR 0.19, TPR 0.98 | FPR 0.18, TPR 0.40 |
+
+Gemma-27B's transferred threshold catches only 40% of successful Hermes-3 attacks at
+the same FPR it had on Qwen-abl; its locally calibrated threshold (0.75 on Hermes-3
+honest scores) also yields TPR 0.40. The deployable transfer failure is threshold
+calibration, not ranking.
 
 ![Monitor AUROC transfer matrix](runs/figs/transfer_matrix.png)
-
-**Refined by E6**: the collapse is NOT lineage-wide. Monitors score the *aligned Llama
-probe* (E6, revived checkpoint) at 0.89–0.97 — as high as Qwen-lineage cells — while the
-same monitors drop to 0.53–0.72 on the *ablated Hermes-3 checkpoint*. The transfer
-failure is therefore specific to that uncensored fine-tune's violation patterns, not to
-vendor mismatch: it is a checkpoint-level generalization failure in the monitors, and the
-aligned Llama probe episodes (with 24 fired violations for Qwen2.5-7B, pooled 32) show
-monitors DO track cross-lineage aligned-model violations well.
 
 ## E3 — Attack-selection (start/stop policy, Qwen-abl × FULL, n=44)
 
