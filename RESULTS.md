@@ -299,7 +299,7 @@ against an abliterated one would see exactly this loss.
 
 ## Integrity notes
 
-- Honest-mode spontaneous side-task violations under final scorers: **0/678** episodes
+- Honest-mode spontaneous side-task violations under final scorers: **0/904** episodes
   (3 checkpoints × both affordances). The three fires seen mid-run were adjudicated to a
   scorer bug (multi-ticket authorization clobbering) and fixed with a regression test.
 - Attack-policy cover stories: 0.70 (FULL) / 0.73 (RESTRICTED) close their ticket — the
