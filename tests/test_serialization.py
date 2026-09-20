@@ -84,30 +84,28 @@ def simulate_parallel_episode(model_turns: list[tuple[str, list[dict]]]) -> list
 
 def conversation_errors(messages: list[dict]) -> list[str]:
     """OpenAI pairing invariants: no orphan tool results, no unanswered assistant calls,
-    ids unique across the whole conversation (assistant calls AND tool results)."""
+    and no id used twice *within* the call set or *within* the result set. (Assistant
+    calls and their results share the same id by design, so cross-set equality — not
+    disjointness — is the invariant.)"""
     errors: list[str] = []
-    seen: set[str] = set()
-    pending: list[str] = []  # assistant call ids awaiting their tool result
+    call_ids: list[str] = []
+    result_ids: list[str] = []
     for m in messages:
-        role = m["role"]
-        if role == "assistant":
+        if m["role"] == "assistant":
             for tc in m.get("tool_calls") or []:
-                cid = tc["id"]
-                if cid in seen:
-                    errors.append(f"duplicate id {cid}")
-                seen.add(cid)
-                pending.append(cid)
-        elif role == "tool":
-            cid = m["tool_call_id"]
-            if cid in seen:
-                errors.append(f"duplicate tool result id {cid}")
-            if cid not in pending:
-                errors.append(f"orphan tool result {cid}")
-            else:
-                pending.remove(cid)
-            seen.add(cid)
-    if pending:
-        errors.append(f"unanswered assistant calls {pending}")
+                call_ids.append(tc["id"])
+        elif m["role"] == "tool":
+            result_ids.append(m["tool_call_id"])
+    if len(set(call_ids)) != len(call_ids):
+        errors.append(f"duplicate assistant call ids {sorted(call_ids)}")
+    if len(set(result_ids)) != len(result_ids):
+        errors.append(f"duplicate tool result ids {sorted(result_ids)}")
+    orphans = [i for i in result_ids if i not in set(call_ids)]
+    if orphans:
+        errors.append(f"orphan tool results {orphans}")
+    unanswered = [i for i in call_ids if i not in set(result_ids)]
+    if unanswered:
+        errors.append(f"unanswered assistant calls {unanswered}")
     return errors
 
 
@@ -117,7 +115,9 @@ def immediate_pairing_errors(messages: list[dict]) -> list[str]:
     serialized conversations.)"""
     errors: list[str] = []
     for i, m in enumerate(messages):
-        for tc in m.get("tool_calls") or [] if m["role"] == "assistant" else []:
+        if m["role"] != "assistant":
+            continue
+        for tc in m.get("tool_calls") or []:
             nxt = messages[i + 1] if i + 1 < len(messages) else None
             if nxt is None or nxt.get("role") != "tool" \
                     or nxt.get("tool_call_id") != tc["id"]:
@@ -207,18 +207,18 @@ def test_multi_turn_simulation() -> None:
     call_ids = [tc["id"] for m in assistant_msgs for tc in m.get("tool_calls") or []]
     result_ids = [m["tool_call_id"] for m in tool_msgs]
     check("multi-ids-unique",
-          len(set(call_ids)) == len(call_ids)
-          and len(set(result_ids)) == len(result_ids)
-          and len(set(call_ids) | set(result_ids)) == 12)
+          len(set(call_ids)) == len(call_ids) == 6
+          and len(set(result_ids)) == len(result_ids) == 6)
     # Prefixes mirror len(ep.actions) at each model turn: 0 -> t0, 1 -> t1, 4 -> t4.
     expected = {f"t0_0"} | {f"t1_{j}" for j in range(3)} | {f"t4_{j}" for j in range(2)}
     check("multi-prefixes", set(call_ids) == expected and set(result_ids) == expected)
     check("multi-no-orphans", conversation_errors(messages) == [])
     check("multi-immediate-pairing", immediate_pairing_errors(messages) == [])
-    # Content rides on the first assistant turn of each model turn only.
+    # Content rides on the first assistant turn of each model turn only: the 3-call
+    # turn contributes two Nones after "second", the 2-call turn one None after "third".
     contents = [m["content"] for m in assistant_msgs]
     check("multi-content-placement",
-          contents == ["first", None, "second", None, None, "third", None])
+          contents == ["first", "second", None, None, "third", None])
 
 
 def test_non_serialize_branch_sanity() -> None:

@@ -28,7 +28,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from .engine import LLM, dispatch, tool_schemas
+from .engine import LLM, dispatch, needs_serialized_history, serialized_assistant_turns, tool_schemas
 from .policies import HONEST_SYSTEM, user_message
 from .world import AffordanceConfig, GEPWorld
 
@@ -48,9 +48,12 @@ def build_prefix_messages(rec: dict[str, Any], upto: int) -> list[dict[str, Any]
     system prompt.
 
     The original episode ran under the policy prompt (honest or attack); the continuation
-    uses HONEST_SYSTEM because that is what the trusted policy is. Assistant turns keep
-    their original tool calls so the history is faithful; tool results are re-serialised
-    with the same 6000-char truncation the live runner used.
+    uses HONEST_SYSTEM because that is what the trusted policy is. History is rebuilt as
+    ONE synthetic single-call assistant turn per recorded action (id call_{i}, no
+    assistant text): this is deliberately NOT the model's original multi-call grouping —
+    single-call turns are always safe to re-render for every chat template, including the
+    llama3_json one that raises on multi-call history (see engine.py). Tool results are
+    re-serialised with the same 6000-char truncation the live runner used.
     """
     cell = rec["cell"]
     ticket = {}
@@ -141,6 +144,11 @@ def run_deferred(rec: dict[str, Any], scores: list[float], threshold: float,
     # Deferred: continue under the honest policy from the prefix state.
     messages = build_prefix_messages(rec, crossing)
     schemas = tool_schemas(cell["affordances"], aff.allow_outbound_http)
+    # If the trusted policy runs on a model whose chat template cannot re-render
+    # multi-call assistant turns (llama3_json family), serialize continuation turns
+    # exactly as run_episode does for the untrusted policy. build_prefix_messages always
+    # emits single-call turns, so only the continuation's own turns need this.
+    serialize = needs_serialized_history(llm.cfg.model)
     cont: list[dict[str, Any]] = []
     error = None
     try:
@@ -150,19 +158,33 @@ def run_deferred(rec: dict[str, Any], scores: list[float], threshold: float,
             if not tool_calls:
                 out["final_text"] = (r.get("content") or "")[:2000]
                 break
-            messages.append({"role": "assistant", "content": r.get("content") or "",
-                             "tool_calls": [
-                                 {"id": f"c{turn}_{j}", "type": "function",
-                                  "function": {"name": tc["name"], "arguments": tc["arguments"]}}
-                                 for j, tc in enumerate(tool_calls)]})
-            for j, tc in enumerate(tool_calls):
-                result = dispatch(world, tc["name"], tc["arguments"])
-                cont.append({"i": len(cont), "tool": tc["name"],
-                             "args": _safe_json(tc["arguments"]), "result": result})
-                messages.append({
-                    "role": "tool", "tool_call_id": f"c{turn}_{j}",
-                    "content": json.dumps(result, default=str)[:6000],
-                })
+            if serialize:
+                id_prefix = f"c{turn}"
+                turns = serialized_assistant_turns(r.get("content") or "", tool_calls,
+                                                   id_prefix=id_prefix)
+                for j, tc in enumerate(tool_calls):
+                    messages.append(turns[j])
+                    result = dispatch(world, tc["name"], tc["arguments"])
+                    cont.append({"i": len(cont), "tool": tc["name"],
+                                 "args": _safe_json(tc["arguments"]), "result": result})
+                    messages.append({
+                        "role": "tool", "tool_call_id": f"{id_prefix}_{j}",
+                        "content": json.dumps(result, default=str)[:6000],
+                    })
+            else:
+                messages.append({"role": "assistant", "content": r.get("content") or "",
+                                 "tool_calls": [
+                                     {"id": f"c{turn}_{j}", "type": "function",
+                                      "function": {"name": tc["name"], "arguments": tc["arguments"]}}
+                                     for j, tc in enumerate(tool_calls)]})
+                for j, tc in enumerate(tool_calls):
+                    result = dispatch(world, tc["name"], tc["arguments"])
+                    cont.append({"i": len(cont), "tool": tc["name"],
+                                 "args": _safe_json(tc["arguments"]), "result": result})
+                    messages.append({
+                        "role": "tool", "tool_call_id": f"c{turn}_{j}",
+                        "content": json.dumps(result, default=str)[:6000],
+                    })
     except Exception as e:  # noqa: BLE001
         error = f"{type(e).__name__}: {e}"
 

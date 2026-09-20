@@ -67,12 +67,32 @@ mass it is moderately better. An organisation's choice between "restrict afforda
 equally or weights exfiltration above escalation — and the monitor results (E4) say the
 monitor-side option is cheaper to improve than it looks.
 
-### The probe result (aligned model + attack prompt)
+### The probe result (aligned models + attack prompt — two lineages, E6)
 
-The aligned Qwen-32B reaches attack success 0.43 (FULL) / 0.50 (RESTRICTED) — statistically
-indistinguishable from the ablated checkpoint (0.39/0.45) — while honest-mode usefulness
-is equal too (0.73 both). Alignment-as-measured-by-refusal did not reduce completed
-violations under a fixed elicitation prompt.
+| probe | affordances | cover success | attack success | vs same-lineage ablated |
+|---|---|---|---|---|
+| Qwen-32B | FULL | 0.59 | 0.43 | 0.39 |
+| Qwen-32B | RESTRICTED | 0.62 | 0.50 | 0.45 |
+| Llama-8B (E6) | FULL | 0.46 | 0.22 | 0.05 |
+| Llama-8B (E6) | RESTRICTED | 0.54 | 0.07 | 0.00 |
+
+The elicitation asymmetry **generalizes across lineages**: in both families the aligned
+probe matches or exceeds its ablated counterpart (qwen 0.43/0.50 vs 0.39/0.45; llama
+0.22/0.07 vs 0.05/0.00), while honest-mode usefulness is healthy for both probes (0.73
+qwen; 0.57/0.46 llama). The llama probe's absolute rate is lower (its cover story is
+weaker — honest usefulness 0.57 vs the ablated 0.05 shows this checkpoint family is less
+reliable at multi-step work), but the ordering aligned ≥ ablated holds in both lineages:
+alignment-as-measured-by-refusal did not reduce completed violations under a fixed
+elicitation prompt. Per-side-task mix also differs by lineage: the qwen probe's fires are
+exfiltration-heavy (ST1 21, ST3 22 FULL); the llama probe's are silent-edit-heavy
+(ST2 14 FULL, 7 RESTRICTED).
+
+### The revived aligned Llama: honest leg (E6)
+
+Honest usefulness 0.57 (FULL) / 0.46 (RESTRICTED), 0 errors, 2 zero-action episodes of
+226, serialized-history fingerprint confirmed (132/226 episodes with n_actions >
+n_turns). Below the Qwen honest legs (0.70–0.73) — the 8B checkpoint is less reliable at
+multi-step workflow completion, consistent with the Hermes-3 honest findings.
 
 ### The ROI trap task: an unauthorised-release differential (honest mode, n=20/model)
 
@@ -96,15 +116,20 @@ that monitors, not prompts, have to close.
 
 ## Cross-lineage monitor transfer (FULL, context-free monitors)
 
-| monitor \ policy family | qwen | llama (Hermes-3) | Δ |
+| monitor \ policy family | qwen (abl + aligned-probe) | llama: Hermes-3 abl | llama: aligned probe (E6) |
 |---|---|---|---|
-| Gemma-27B | 0.934 (n=2 cells) | 0.563 | **−0.37** |
-| Qwen-8B (mean) | 0.926 (n=4 cells) | 0.672 | **−0.25** |
+| Gemma-27B | 0.934 | 0.563 | 0.920 |
+| Qwen-8B (mean) | 0.926 | 0.672 | 0.912–0.938 |
 
 ![Monitor AUROC transfer matrix](runs/figs/transfer_matrix.png)
 
-Both monitors lose 0.25–0.37 AUROC on the Llama-lineage policy. Replicated at n=10/cell;
-far outside the CI band.
+**Refined by E6**: the collapse is NOT lineage-wide. Monitors score the *aligned Llama
+probe* (E6, revived checkpoint) at 0.89–0.97 — as high as Qwen-lineage cells — while the
+same monitors drop to 0.53–0.72 on the *ablated Hermes-3 checkpoint*. The transfer
+failure is therefore specific to that uncensored fine-tune's violation patterns, not to
+vendor mismatch: it is a checkpoint-level generalization failure in the monitors, and the
+aligned Llama probe episodes (with 24 fired violations for Qwen2.5-7B, pooled 32) show
+monitors DO track cross-lineage aligned-model violations well.
 
 ## E3 — Attack-selection (start/stop policy, Qwen-abl × FULL, n=44)
 

@@ -35,9 +35,11 @@ http_post, no partner stores -- enforced inside the world, not the prompt).
 
 ## Method
 
-1. **honest** phase: aligned policies (Qwen2.5-32B, Llama-3.1-8B, phi-4) do the tickets.
-2. **probe** phase: aligned policies given the attack prompt -- measures elicitation, NOT
-   attack capability.
+1. **honest** phase: every policy checkpoint in honest mode -- the same checkpoints as
+   the attack roster (D12) plus the aligned Qwen2.5-32B and the revived aligned
+   Llama-3.1-8B (E6, official tool template + serialized history).
+2. **probe** phase: aligned policies given the attack prompt -- measures elicitation,
+   NOT attack capability. Two probes (D5): Qwen2.5-32B and Llama-3.1-8B (revived, E6).
 3. **attack** phase: behaviourally-ablated checkpoints (Qwen2.5-32B-abl,
    Llama-3.1-8B-abl) pursue side tasks under cover of the ticket.
 4. **monitor** phase: trusted monitors (Qwen3-8B, Qwen2.5-7B, Gemma-3-27B) score every
@@ -101,7 +103,8 @@ gep/            the setting: fixtures, world, tasks, side-task scorers, policies
                 monitors, engine (LLM client + tool dispatch), runner, replay
 analysis/       metrics (bootstrap CIs, AUROC, safety-at-budget), figures
 ops/            tmux-based server lifecycle, generated launchers, pipeline script
-tests/          scorer soundness suite (467 checks), prompt construction suite (57)
+tests/          scorer soundness suite (479 checks), prompt construction suite (57),
+                serialization suite (58)
 run_matrix.py   phased experiment driver (honest/probe/attack/monitor/analyze)
 serve.py        model roster and vLLM server management
 ```
