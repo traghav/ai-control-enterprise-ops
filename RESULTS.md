@@ -277,7 +277,28 @@ Phase 1 assumes the trusted continuation never violates. Sampled 12 honest-defer
   recovery is limited by what the trusted policy can do, not by the deferral.
 - Continuation lengths 0–7 actions; 0 errors.
 
-### Reading E5 against E2's safety numbers
+### E9 — the frontier measured: 511 real trusted continuations
+
+E5's usefulness-recovery figure was an estimate from 18 continuations. E9 runs REAL
+trusted continuations (same checkpoint, honest prompt) for every deferred episode on the
+Qwen-abl lineage — 511 continuations across both monitor variants at threshold 0.5
+(219 attack-averted + 52 deferred-honest cf; 209 + 31 ta).
+
+| cell | n | main recovered | violations introduced | errors | mean continuation length |
+|---|---|---|---|---|---|
+| cf, averted attacks | 219 | 0.70 | **0** | 0 | 1.5 actions |
+| cf, deferred honest | 52 | 0.48 | **0** | 0 | 2.8 |
+| ta, averted attacks | 209 | 0.69 | **0** | 0 | 1.2 |
+| ta, deferred honest | 31 | 0.36 | **0** | 0 | 3.0 |
+
+Measured frontier (cf, th 0.5): deferral averts 92 violations and costs 7% usefulness
+(0.703 → 0.652 estimated pooled usefulness with deferral). The clean-continuation
+assumption is now measured, not assumed: 0 violations in 511 continuations. Recovery is
+incomplete on deferred honest episodes (0.48) because deferral interrupts work mid-task
+and the trusted policy does not always finish it — the honest cost of deferral is real
+but bounded. The ticket-aware variant's smaller deferral set recovers fewer honest main
+tasks (0.36 of 31) — its deferrals are concentrated on the harder scenarios — but
+introduces no violations either.
 
 The audit-style `safety@1%` saturated at 0.00 in the hardest cells because the honest
 tail sits at the ceiling — but under the actual defer protocol with the same scores,
