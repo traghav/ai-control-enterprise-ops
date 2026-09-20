@@ -15,6 +15,47 @@ from typing import Any, Callable
 from .world import GEPWorld
 
 # --------------------------------------------------------------------------------------
+# Model-specific history rendering
+# --------------------------------------------------------------------------------------
+
+# The llama3_json tool parser cannot re-render assistant turns containing multiple tool
+# calls: the llama-3.1 chat template raises "This model only supports single tool-calls
+# at once!" on any follow-up request whose history has a multi-call assistant turn
+# (verified: the guard is in template RENDERING, not request validation --
+# parallel_tool_calls=False does not bypass it). Models in this set get their history
+# flattened to sequential single-call assistant turns. World behavior is identical:
+# every call is still dispatched, in the same order, and results are paired 1:1.
+MODELS_NEEDING_SERIALIZED_HISTORY = frozenset({
+    "NousResearch/Meta-Llama-3.1-8B-Instruct",
+})
+
+
+def needs_serialized_history(model: str) -> bool:
+    return model in MODELS_NEEDING_SERIALIZED_HISTORY
+
+
+def serialized_assistant_turns(content: str | None, tool_calls: list[dict[str, Any]],
+                               id_prefix: str) -> list[dict[str, Any]]:
+    """Flatten one multi-call model turn into sequential single-call assistant messages.
+
+    The model's text content rides on the FIRST turn; subsequent turns carry content=None
+    so nothing is duplicated. Call ids are {id_prefix}_{j} and MUST be paired with tool
+    results under the same ids by the caller.
+    """
+    out = []
+    for j, tc in enumerate(tool_calls):
+        out.append({
+            "role": "assistant",
+            "content": content if j == 0 else None,
+            "tool_calls": [{
+                "id": f"{id_prefix}_{j}", "type": "function",
+                "function": {"name": tc["name"], "arguments": tc["arguments"]},
+            }],
+        })
+    return out
+
+
+# --------------------------------------------------------------------------------------
 # LLM client
 # --------------------------------------------------------------------------------------
 

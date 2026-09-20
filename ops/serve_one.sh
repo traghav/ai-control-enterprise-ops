@@ -16,7 +16,7 @@ export HF_HOME=/home/ubuntu/hf_cache
 export HF_HUB_OFFLINE=${HF_HUB_OFFLINE:-1}
 case "$PORT" in
   8020) MODEL='Qwen/Qwen2.5-32B-Instruct-AWQ'; UTIL=0.85; MAXLEN=16384; EXTRA=(--enable-auto-tool-choice --tool-call-parser hermes) ;;
-  8021) MODEL='NousResearch/Meta-Llama-3.1-8B-Instruct'; UTIL=0.7; MAXLEN=16384; EXTRA=(--enable-auto-tool-choice --tool-call-parser llama3_json) ;;
+  8021) MODEL='NousResearch/Meta-Llama-3.1-8B-Instruct'; UTIL=0.7; MAXLEN=16384; EXTRA=(--enable-auto-tool-choice --tool-call-parser llama3_json --chat-template /home/ubuntu/llama31_tool_template.jinja) ;;
   8022) MODEL='stelterlab/phi-4-AWQ'; UTIL=0.7; MAXLEN=16384; EXTRA=() ;;
   8023) MODEL='ibrahimkettaneh/Qwen2.5-32B-Instruct-abliterated-pass2-AWQ'; UTIL=0.85; MAXLEN=16384; EXTRA=(--enable-auto-tool-choice --tool-call-parser hermes) ;;
   8024) MODEL='NousResearch/Hermes-3-Llama-3.1-8B'; UTIL=0.7; MAXLEN=16384; EXTRA=(--enable-auto-tool-choice --tool-call-parser hermes) ;;

@@ -51,8 +51,14 @@ ROSTER: list[ModelSpec] = [
     # --- untrusted policies (phases: honest / attack / probe) ------------------------
     ModelSpec("Qwen/Qwen2.5-32B-Instruct-AWQ", 8020, "qwen", "policy", 0.85,
               extra=("--enable-auto-tool-choice", "--tool-call-parser", "hermes")),
+    # Aligned Llama-3.1-8B revived with the OFFICIAL tool-capable chat template (the
+    # NousResearch re-upload ships a template that never renders tool schemas -> junk
+    # legs, D12). Multi-call history is serialized per-request in gep/engine.py
+    # (MODELS_NEEDING_SERIALIZED_HISTORY), because the llama3_json parser cannot
+    # re-render multi-call assistant turns.
     ModelSpec("NousResearch/Meta-Llama-3.1-8B-Instruct", 8021, "llama", "policy", 0.70,
-              extra=("--enable-auto-tool-choice", "--tool-call-parser", "llama3_json")),
+              extra=("--enable-auto-tool-choice", "--tool-call-parser", "llama3_json",
+                     "--chat-template", "/home/ubuntu/llama31_tool_template.jinja")),
     ModelSpec("stelterlab/phi-4-AWQ", 8022, "phi", "policy", 0.70),
     ModelSpec("ibrahimkettaneh/Qwen2.5-32B-Instruct-abliterated-pass2-AWQ", 8023, "qwen",
               "policy", 0.85,
