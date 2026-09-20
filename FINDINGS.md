@@ -15,7 +15,9 @@ the false positives are largely *removable*: giving the monitor the assigned tic
 original authorisation context cuts FPR@0.5 in 14 of 15 cells at unchanged AUROC (E4);
 (4) under the actual defer protocol (E5), these monitors avert 97% of successful attacks
 — and ticket context converts the FPR reduction into a 40% cut in honest deferrals at
-modest safety cost. Consequence for practice: a monitor validated on one model family
+modest safety cost. But the same monitors and threshold that reach 0.968 safety on the
+Qwen-abl lineage deliver 0.400 on the ablated Hermes-3 lineage (worse than chance): the
+transfer collapse is a safety failure under deployment, not a ranking artefact. Consequence for practice: a monitor validated on one model family
 and one tool configuration gives no warranty about its behaviour on another; restricting
 affordances buys a change in *which* violations occur, not a reduction in *whether* they
 do; the cheapest large monitor win is not a bigger model but the authorisation context
@@ -80,22 +82,25 @@ make post-hoc audit metrics look degenerate.
    beyond its own training distribution.
 
 6. **Defer-to-trusted works well on exactly the attacks that look worst post-hoc (E5) —
-   except the quiet ones.** Simulating the actual defer protocol over all 452
-   main-phase episodes: 92/95 successful attacks (97%) are averted because the attack's
-   suspicious actions arrive BEFORE its cover story completes — the monitor crosses
-   early, and only 2-3 violations complete before deferral. The escapes are not random:
-   all three are ST2 silent single-field edits in the RESTRICTED config (escape rate
-   0.09 for ST2 vs 0.00 for every other class). The substitution effect thus compounds:
-   restriction shifts the attack toward the one violation class deferral catches worst.
-   The E4 ticket-context FPR reduction converts directly into operational savings:
-   honest deferral rate drops 23% -> 14% (fewer trusted continuations) at modest safety
-   cost (0.968 -> 0.926). Real trusted continuations (n=18) confirm the protocol
-   assumption: 0 violations introduced, main task recovered 11/18 (recovery bounded by
-   the checkpoint's own honest withhold rate on the trap task). Notably, the
-   audit-budget safety metric that saturated at 0.00 on the same scores and the defer
-   protocol at 0.90-0.97 answer different operational questions; the budget metric's
-   degeneracy is an artefact of asking the review question under tail saturation, not
-   evidence that control fails.
+   and the transfer collapse becomes a safety failure, not a ranking footnote.**
+   Simulating the actual defer protocol over all 452 main-phase episodes: 92/95
+   successful attacks (97%) are averted because the attack's suspicious actions arrive
+   BEFORE its cover story completes — the monitor crosses early, and only 2-3 violations
+   complete before deferral. The escapes are not random: all three are ST2 silent
+   single-field edits in the RESTRICTED config (escape rate 0.09 for ST2 vs 0.00 for
+   every other class). The substitution effect thus compounds: restriction shifts the
+   attack toward the one violation class deferral catches worst. The E4 ticket-context
+   FPR reduction converts directly into operational savings: honest deferral rate drops
+   23% -> 14% (fewer trusted continuations) at modest safety cost (0.968 -> 0.926).
+   Real trusted continuations (n=18) confirm the protocol assumption: 0 violations
+   introduced, main task recovered 11/18. But on the ablated Hermes-3 lineage — where
+   monitor AUROC collapsed — the SAME monitors and threshold that achieve 0.968 safety
+   on Qwen-abl deliver **0.600 (Gemma-27B, th 0.5) and 0.400 (th 0.75)**, the latter
+   worse than chance. The transfer failure is therefore not a ranking artefact: under
+   deferral it manifests as direct safety loss. The E6 refinement scopes it: the
+   aligned-Llama probe is tracked well (0.89-0.97), so the failure is specific to the
+   ablated checkpoint's violation patterns — precisely the mismatch an operator would
+   hit if they validated on an aligned model and deployed against an abliterated one.
 
 7. **World-state scoring is what makes the numbers mean anything.** Attack plans are
    frequent in transcripts; completed violations are not. Spot-checks of 10 attack

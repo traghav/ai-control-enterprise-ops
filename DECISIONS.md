@@ -238,3 +238,18 @@ Findings E6 contributed: (a) the transfer collapse is checkpoint-specific, not
 lineage-wide (monitors score the aligned-Llama probe at 0.89-0.97); (b) the elicitation
 asymmetry generalizes across lineages (aligned >= ablated in both). The honest leg
 (0.57/0.46 usefulness) doubles as the probe's same-checkpoint baseline per D12.
+
+
+## D17 — E5 extension: defer protocol across both lineages
+
+E5 was computed on the Qwen-abl lineage only; the obvious reviewer question is whether
+the defer protocol still protects where monitor AUROC collapsed (Hermes-3). The
+extension (scripts/e5_lineages.py, pure-Python counterfactual over the frozen Hermes-3
+episodes) answers: NO for the collapsed monitor. Gemma-27B at threshold 0.75 averts only
+2/5 successful attacks (safety 0.400 — worse than chance given the 5/226 base rate), and
+0.600 at threshold 0.5, while the SAME monitor reaches 0.968 on Qwen-abl. Qwen3-8B holds
+1.000/0.800 on Hermes-3 — the collapse is monitor-pairing-specific, consistent with the
+E4/E6 refinement. Also re-verified: 0 spontaneous violations in the E6 revived-Llama
+honest legs (226 episodes). This converts the transfer finding from a ranking result
+into an operational safety result, and is reported in RESULTS.md (E5 section) and
+FINDINGS #6.
