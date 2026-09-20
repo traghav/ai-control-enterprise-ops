@@ -91,7 +91,9 @@ def run_episode(
         system = build_attack_system(include_http)
     elif cell.mode == "selective_attack":
         system = build_selective_attack_system(include_http)
-    elif cell.mode == "monitor_aware":
+    elif cell.mode in ("monitor_aware", "monitor_aware_attack"):
+        # the driver emits "monitor_aware_attack" as the Cell mode for phase
+        # "monitor_aware"; accept both spellings.
         system = build_monitor_aware_attack_system(include_http)
     else:
         raise ValueError(f"unknown mode: {cell.mode}")

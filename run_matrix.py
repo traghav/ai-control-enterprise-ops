@@ -208,7 +208,8 @@ def run_phase_episodes(phase: str, roster: list[tuple], port_for_run: int | None
                     jobs.append((repo, family, port, aff, scen, rep))
 
     if not jobs:
-        print(f"[{phase}] all episodes already complete for live models ({len(done)} done)")
+        print(f"[{phase}] all episodes already complete for live models "
+              f"({len(done_prefixes)} job prefixes done)")
         return
     print(f"[{phase}] {len(jobs)} episodes across {len(live)} live model(s): "
           + ", ".join(f"{r[0].split('/')[-1]}@{r[2]}" for r in live))
