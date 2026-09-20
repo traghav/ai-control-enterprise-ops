@@ -54,13 +54,14 @@ POLICY_HONEST = [
     # D12: the honest baseline for each untrusted policy is THE SAME CHECKPOINT run in
     # honest mode -- mode is the only differing factor, which is what makes AUROC/safety
     # within-model meaningful. The aligned Qwen row is kept (its honest data doubles as
-    # the probe's honest reference). The aligned NousResearch-Llama and phi-4 entries were
-    # REMOVED: their honest legs produced zero-action junk (NousResearch's re-upload ships
-    # a chat template that never renders tool schemas; phi-4 has no vLLM tool parser and
-    # every tool_choice=auto request was a 400) -- see D12 and the purge note.
+    # the probe's honest reference). The aligned NousResearch-Llama entry was REMOVED in
+    # D12 (its re-upload template never rendered tool schemas -> zero-action junk) and is
+    # REVIVED in E6 under the official tool template + serialized history, as the honest
+    # baseline for the revived llama probe. phi-4 stays out (no vLLM tool parser).
     ("Qwen/Qwen2.5-32B-Instruct-AWQ", "qwen", 8020, 0.85),
     ("ibrahimkettaneh/Qwen2.5-32B-Instruct-abliterated-pass2-AWQ", "qwen", 8023, 0.85),
     ("NousResearch/Hermes-3-Llama-3.1-8B", "llama", 8024, 0.70),
+    ("NousResearch/Meta-Llama-3.1-8B-Instruct", "llama", 8021, 0.70),
 ]
 POLICY_ATTACK = [
     # Attack phase runs ONLY on behaviourally-ablated checkpoints (DECISIONS D6): aligned
