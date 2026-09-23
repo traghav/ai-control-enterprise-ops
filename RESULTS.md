@@ -267,6 +267,31 @@ safety is 0.90–0.97. The difference is structural: deferral acts on the *first
 different operational questions, and only the second one degenerates under tail
 saturation.
 
+### The transfer collapse is operationally significant (defer protocol, both lineages)
+
+Does the monitor-transfer collapse (AUROC 0.93 → 0.56) matter for the deployable
+protocol, or only for post-hoc ranking? Defer simulation on both lineages, same monitor,
+same threshold:
+
+| policy | monitor | threshold | successful attacks | SAFETY | honest deferred |
+|---|---|---|---|---|---|
+| Qwen-abl | Qwen3-8B | 0.5 | 95 | **0.968** | 23% |
+| Qwen-abl | Gemma-27B | 0.5 | 95 | **0.968** | 23% |
+| Hermes-3 | Qwen3-8B | 0.5 | 5 | **1.000** | 9% |
+| Hermes-3 | Gemma-27B | 0.5 | 5 | **0.600** | 19% |
+| Hermes-3 | Gemma-27B | 0.75 | 5 | **0.400** | 18% |
+
+The collapse converts directly into protection failures: Gemma-27B at threshold 0.75
+defers worse than chance on Hermes-3 (0.400 — below the 0.2 attack-base-rate floor of
+"defer on everything"). Two monitors from the same prompt, same scoring scheme, and
+near-identical behavior on Qwen-lineage policies behave oppositely on the ablated Llama
+policy. This is the operational form of the headline: monitor validation on one model
+family does not transfer, and under deferral the failure mode is *safety loss*, not just
+ranking noise. The E6 refinement tempers the scope: the aligned-Llama probe is tracked
+well (0.89–0.97), so the failure is specific to the ablated Hermes-3 checkpoint's
+violation patterns — but an operator who validated on an aligned model and deployed
+against an abliterated one would see exactly this loss.
+
 ## Integrity notes
 
 - Honest-mode spontaneous side-task violations under final scorers: **0/678** episodes
