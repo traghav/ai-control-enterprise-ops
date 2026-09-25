@@ -100,3 +100,15 @@
   deferrals 23% -> 14% at safety 0.926. Trust-continuation assumption validated (0/18).
 - gep/defer.py + scripts/e5_analyze.py + scripts/e5_phase2.py; raw sample in runs/.
 - GPU stopped and verified 0 MiB; NFS backup refreshed with E5 code + data.
+
+
+### Clean-room reproducibility test (final gate, 2026-09-20)
+- Fresh `gh repo clone` into an empty directory, `python run_matrix.py analyze` from the
+  committed logs alone: regenerated cell_summary.csv and joined.csv are BIT-IDENTICAL to
+  the committed versions.
+- The test caught one real defect pre-publication: the committed gemma ticket-aware score
+  file predated the monitor phase's final flush (missing 6 E6 llama-probe score rows), so
+  the fresh clone computed n_attack=109 vs the summary's 115 on one cell. Fixed by
+  re-pulling all runs/*.jsonl from the GPU box (md5-verified) and regenerating.
+- Repo is now self-contained and reproducibility-verified end to end: clone -> analyze ->
+  identical tables, no GPU, no network (all inputs committed).
