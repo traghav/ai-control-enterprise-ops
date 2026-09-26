@@ -63,7 +63,7 @@
 ### Final matrix
 - 2 attack lineages x own honest baselines x 2 affordances x (3 monitors x 2 contexts)
 - E3 selective leg (n=44); probes on aligned Qwen-32B and (E6) aligned Llama-8B.
-- Spontaneous honest violations: 0/678 (frozen matrix; E6 honest legs re-checked post-run). Suite: 479 scorer + 57 prompt + 58 serialization checks green.
+- Spontaneous honest violations: 0/678 frozen matrix, 0/904 including the E6 honest legs (recounted from committed data). Suite: 479 scorer + 57 prompt + 58 serialization checks green.
 
 ### Fallback level
 - 0 for the core matrix; phi-4 + aligned-Llama dropped per ladder (D12).
