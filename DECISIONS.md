@@ -253,3 +253,23 @@ E4/E6 refinement. Also re-verified: 0 spontaneous violations in the E6 revived-L
 honest legs (226 episodes). This converts the transfer finding from a ranking result
 into an operational safety result, and is reported in RESULTS.md (E5 section) and
 FINDINGS #6.
+
+
+## D18 — E7: the transfer "collapse" is scope-dependent; corrected framing
+
+The transfer finding was originally computed with ALL attack episodes as positives. E7
+recomputed with FIRED (successful) attacks only and found no ranking collapse on
+Hermes-3 (0.72-1.00, n=5) — because Hermes rarely acted on the attack prompt, so most of
+its "attack" episodes are behaviorally honest and scoring them low is correct monitor
+behavior. The earlier ALL-scope number (0.563-0.721) is not wrong as a measurement, but
+interpreting it as "monitors cannot detect this policy's violations" was wrong: 101 of
+those 106 positives are non-violations.
+
+What genuinely fails to transfer is the score scale. A threshold chosen on Qwen-abl at
+10% FPR lands at a different operating point on Hermes-3 (Gemma: TPR 0.98 -> 0.40 at
+similar FPR; even the locally calibrated Hermes threshold yields TPR 0.40 for Gemma).
+The corrected operational statement: per-policy threshold recalibration is REQUIRED;
+ranking quality transfers.
+
+Reported honestly in this order because the earlier framing was already committed and
+pushed: the correction is part of the record, not a silent edit.
