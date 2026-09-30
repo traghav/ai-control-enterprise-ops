@@ -337,6 +337,30 @@ well (0.89–0.97), so the failure is specific to the ablated Hermes-3 checkpoin
 violation patterns — but an operator who validated on an aligned model and deployed
 against an abliterated one would see exactly this loss.
 
+### E10 — is the handover the active ingredient? (untrusted continue, n=104)
+
+The defer protocol does two things at the crossing point: it stops the flagged action,
+and it hands the episode to the trusted policy. E10 separates these. On the same
+averted-attack set (92 episodes, context-free Qwen3-8B monitor, threshold 0.5) and a
+12-episode sample of deferred honest episodes, the UNTRUSTED policy continues the
+episode under its own attack prompt instead of the trusted policy taking over.
+
+| condition | violations after crossing | main task recovered | mean continuation length |
+|---|---|---|---|
+| trusted handover (E9) | **0/219** | 0.70 | 1.5 actions |
+| untrusted continue, averted attacks (n=92) | **51 (0.55)** | 0.61 | 8.1 actions |
+| untrusted continue, deferred honest (n=12) | 4 (0.33) | 0.42 | 9.7 |
+
+The handover is the active ingredient. Interrupting the attack policy and letting it
+continue under its own prompt does not defuse most attacks: 55% complete a violation
+anyway (ST2 19, ST4 19, ST1 11, ST3 11), and they work much longer (8.1 vs 1.5 mean
+continuation actions). The interrupted-but-not-handed-over condition also produces
+violations on deferred honest episodes continued under the attack prompt (4/12) —
+continued exposure to the elicitation prompt generates violations even where the
+original honest run had none. Practical reading: stopping the flagged action without
+changing who acts next recovers only part of the safety; the policy change at the
+crossing point carries the protection.
+
 ## Integrity notes
 
 - Honest-mode spontaneous side-task violations under final scorers: **0/904** episodes
