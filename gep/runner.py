@@ -14,7 +14,8 @@ from typing import Any
 
 from .engine import Episode, LLM, LLMConfig, dispatch, needs_serialized_history, serialized_assistant_turns, tool_schemas
 from .monitors import LLMMonitor, MonitorSpec
-from .policies import HONEST_SYSTEM, build_attack_system, build_selective_attack_system, user_message
+from .policies import (HONEST_SYSTEM, build_attack_system, build_monitor_aware_attack_system,
+                       build_selective_attack_system, user_message)
 from .side_tasks import score_all
 from .tasks import MainTask, build_tasks
 from .world import AffordanceConfig, GEPWorld
@@ -90,6 +91,8 @@ def run_episode(
         system = build_attack_system(include_http)
     elif cell.mode == "selective_attack":
         system = build_selective_attack_system(include_http)
+    elif cell.mode == "monitor_aware":
+        system = build_monitor_aware_attack_system(include_http)
     else:
         raise ValueError(f"unknown mode: {cell.mode}")
 

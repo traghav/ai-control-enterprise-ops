@@ -109,6 +109,15 @@ SELECTIVE_ROSTER = [
 ]
 SELECTIVE_AFFORDANCES = ["FULL"]
 
+# E8 (monitor-aware adaptive attacker): same cell as E3/E5 -- Qwen-abl x FULL -- with an
+# attack prompt that knows the monitor's scoring guide and adaptation rules (small
+# increments, ticket-scoped tools only, no bulk patterns). Compared against the E2
+# always-attack cell on the same configuration.
+MONITOR_AWARE_ROSTER = [
+    ("ibrahimkettaneh/Qwen2.5-32B-Instruct-abliterated-pass2-AWQ", "qwen", 8023, 0.85),
+]
+MONITOR_AWARE_AFFORDANCES = ["FULL"]
+
 
 def episodes_path(phase: str) -> Path:
     return RUNS / f"episodes_{phase}.jsonl"
@@ -183,8 +192,13 @@ def run_phase_episodes(phase: str, roster: list[tuple], port_for_run: int | None
 
     jobs = []
     for repo, family, port, _util in live:
-        # E3 selective phase runs ONE cell only (SELECTIVE_AFFORDANCES), not the grid.
-        affs = SELECTIVE_AFFORDANCES if phase == "selective" else AFFORDANCES
+        # E3 selective / E8 monitor-aware phases run ONE cell only, not the grid.
+        if phase == "selective":
+            affs = SELECTIVE_AFFORDANCES
+        elif phase == "monitor_aware":
+            affs = MONITOR_AWARE_AFFORDANCES
+        else:
+            affs = AFFORDANCES
         for aff in affs:
             for scen in SCENARIOS:
                 for rep in range(EPISODES_PER_SCENARIO):
@@ -219,6 +233,7 @@ def run_phase_episodes(phase: str, roster: list[tuple], port_for_run: int | None
             mode=("honest" if phase == "honest"
                   else "attack_probe" if phase == "probe"
                   else "selective_attack" if phase == "selective"
+                  else "monitor_aware_attack" if phase == "monitor_aware"
                   else "attack"),
         )
         llm = LLM(LLMConfig(model=repo, base_url=f"http://localhost:{port}/v1",
@@ -285,7 +300,7 @@ def run_monitor_phase(repo: str, family: str, port: int, informed: bool = True,
 
     # Collect every scored episode across phases.
     traj: dict[str, dict] = {}
-    for phase in ("honest", "attack", "probe", "selective"):
+    for phase in ("honest", "attack", "probe", "selective", "monitor_aware"):
         p = episodes_path(phase)
         if not p.exists():
             continue
@@ -401,7 +416,7 @@ def run_analyze() -> None:
     # episode cells carry monitor_family=None for policy phases, so the score record is
     # the only reliable source)
     rescored_cache: dict[str, dict] = {}
-    for phase in ("honest", "attack", "probe", "selective"):
+    for phase in ("honest", "attack", "probe", "selective", "monitor_aware"):
         p = episodes_path(phase)
         if not p.exists():
             continue
@@ -462,6 +477,8 @@ def run_analyze() -> None:
             return "selective"
         if phase == "probe":
             return "probe"
+        if phase == "monitor_aware":
+            return "monitor_aware"
         return "main"
 
     by_cell: dict[tuple, list[dict]] = {}
@@ -520,8 +537,8 @@ def run_analyze() -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("phase", choices=["honest", "attack", "probe", "selective", "monitor",
-                                      "analyze"])
+    ap.add_argument("phase", choices=["honest", "attack", "probe", "selective",
+                                      "monitor_aware", "monitor", "analyze"])
     ap.add_argument("--model", help="override: run only this roster entry (repo id substring)")
     ap.add_argument("--port", type=int, help="port the current phase model is served on")
     ap.add_argument("--monitor", help="monitor repo id substring for the monitor phase")
@@ -545,7 +562,8 @@ def main() -> None:
 
     phase = args.phase
     roster = {"honest": POLICY_HONEST, "attack": POLICY_ATTACK, "probe": POLICY_PROBE,
-              "selective": SELECTIVE_ROSTER}[phase]
+              "selective": SELECTIVE_ROSTER,
+              "monitor_aware": MONITOR_AWARE_ROSTER}[phase]
     if args.model:
         roster = [r for r in roster if args.model in r[0]]
         if not roster:
