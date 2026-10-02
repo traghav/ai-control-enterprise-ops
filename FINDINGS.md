@@ -65,6 +65,17 @@ Attack plans appear in transcripts far more often than completed violations. The
 - The audit-budget safety metric degenerates when the honest tail saturates at the score ceiling. Fixed-threshold TPR/FPR and the defer simulation are reported alongside it.
 - The environment is synthetic. The violation taxonomy follows HIPAA-shaped rules; the domain is simulated.
 
+### 8. The adaptive attacker redistributes suspicion but does not evade deferral (E8)
+
+Giving the attacker the monitor's scoring guide and adaptation rules (small increments,
+ticket-scoped tools only, no bulk patterns) shifted the side-task profile away from bulk
+exfiltration toward silent edits (ST1 28 to 12; ST2 5 to 26) and cost the monitors about
+0.09 AUROC on all three. But attack success was unchanged (0.41 vs 0.39) and 93 of 107
+adaptive episodes still crossed the deferral threshold: the max-suspicion rule only
+needs one action to cross, and the adaptive policy's increments still accumulate to
+that. The adaptation interacts with the ST2 escape finding, however -- it produces the
+violation class deferral catches least well.
+
 ## Next experiments
 
 1. Defer with ticket context in the loop: whether the FPR reduction converts into a usefulness win at matched safety when the trusted policy takes over mid-episode.
